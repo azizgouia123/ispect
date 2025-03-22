@@ -217,7 +217,6 @@
                 <label>Photos (maximum 5):</label>
                 <div class="photo-preview" id="photoPreview"></div>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" onclick="capturePhoto()">📸 Prendre une photo</button>
                     <label style="cursor: pointer;">
                         <input type="file" id="fileInput" accept="image/*" multiple 
                                style="display: none;" onchange="handleFileSelect(event)">
@@ -232,13 +231,6 @@
 
             <!-- Boutons -->
             <button type="button" onclick="validateForm()">📄 Générer le rapport PDF</button>
-            <a href="https://www.dropbox.com/request/J2S4eMpAhSUpZPIQOVmE" 
-               id="dropboxLink" 
-               target="_blank"
-               rel="noopener noreferrer"
-               style="display: none;">
-               📤 Envoyer sur Dropbox
-            </a>
         </form>
     </div>
 
