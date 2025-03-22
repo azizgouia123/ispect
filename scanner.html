@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner d'Inspection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+        header img {
+            height: 50px;
+            vertical-align: middle;
+        }
+        h1 {
+            font-size: 2em;
+            margin-top: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            width: 80%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h2 {
+            color: #333;
+        }
+        #result {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        li:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- Logo ajouté -->
+        <img src="logo.png" alt="Logo">
+        <h1>Scanner d'Inspection</h1>
+    </header>
+
+    <div class="container">
+        <!-- Section de vérification du numéro de machine -->
+        <h2>Vérification d'une Machine</h2>
+        <p>Entrez le numéro de machine pour vérifier l'inspection :</p>
+        
+        <input type="text" id="machineNumber" placeholder="Numéro de machine">
+        <button onclick="verifierMachine()">Vérifier</button>
+        
+        <p id="result"></p>
+    </div>
+
+    <div class="container">
+        <!-- Section pour afficher toutes les machines nécessitant une inspection -->
+        <h2>Machines nécessitant une inspection</h2>
+        <button onclick="afficherMachinesAvecInspection()">Afficher les machines sur inspection pour grand client</button>
+        
+        <ul id="machinesList"></ul>
+    </div>
+
+    <script>
+        // L'URL du fichier Excel (depuis GitHub)
+        const fileUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/inspection1.xlsx";
+        
+        // Fonction pour récupérer et lire le fichier Excel
+        function loadExcelFile(url) {
+            return fetch(url)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    return workbook.Sheets[workbook.SheetNames[0]]; // Lire la première feuille
+                });
+        }
+
+        // Fonction pour vérifier la machine
+        function verifierMachine() {
+            const machineNumber = document.getElementById("machineNumber").value.trim();
+            if (!machineNumber) {
+                alert("Veuillez entrer un numéro de machine.");
+                return;
+            }
+
+            loadExcelFile(fileUrl).then(sheet => {
+                const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
+                let found = false;
+                for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
+                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
+                    
+                    if (machineCell && machineCell.v === machineNumber) {
+                        document.getElementById("result").textContent = `Inspection pour la machine ${machineNumber}: ${inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée'}`;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    document.getElementById("result").textContent = "Numéro de machine non trouvé.";
+                }
+            }).catch(error => {
+                console.error("Erreur de chargement du fichier Excel :", error);
+                document.getElementById("result").textContent = "Erreur lors du chargement du fichier.";
+            });
+        }
+
+        // Fonction pour afficher toutes les machines avec un "X" dans la colonne C (inspection nécessaire)
+        function afficherMachinesAvecInspection() {
+            loadExcelFile(fileUrl).then(sheet => {
+                const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
+                const machinesAvecInspection = [];
+                
+                for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
+                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
+                    const xCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Colonne C (pour "X")
+                    
+                    // Si la colonne C contient un "X", on ajoute la machine à la liste
+                    if (xCell && xCell.v === 'X') {
+                        machinesAvecInspection.push({
+                            machine: machineCell.v,
+                            inspection: inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée'
+                        });
+                    }
+                }
+
+                // Affichage des machines nécessitant une inspection
+                const machinesList = document.getElementById("machinesList");
+                machinesList.innerHTML = ''; // Vider la liste précédente
+                if (machinesAvecInspection.length > 0) {
+                    machinesAvecInspection.forEach(machine => {
+                        const li = document.createElement("li");
+                        li.textContent = `Machine ${machine.machine} : ${machine.inspection}`;
+                        machinesList.appendChild(li);
+                    });
+                } else {
+                    machinesList.innerHTML = '<li>Aucune machine nécessitant une inspection.</li>';
+                }
+            }).catch(error => {
+                console.error("Erreur de chargement du fichier Excel :", error);
+                alert("Erreur lors du chargement du fichier.");
+            });
+        }
+    </script>
+</body>
+</html>
