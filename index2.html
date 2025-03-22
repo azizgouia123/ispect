@@ -298,8 +298,8 @@
                 const tds = tr.querySelectorAll('td');
                 return [
                     tds[0].innerText,
-                    tds[1].querySelector('input:checked') ? '✓' : '✗',
-                    tds[2].querySelector('input:checked') ? '✗' : '✓'
+                    tds[1].querySelector('input:checked') ? 'X' : ' ',
+                    tds[2].querySelector('input:checked') ? ' ' : 'X'
                 ];
             });
 
