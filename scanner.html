@@ -62,6 +62,7 @@
             margin-top: 15px;
             font-weight: bold;
             color: #333;
+            white-space: pre-line; /* Permet d'afficher les sauts de ligne */
         }
         ul {
             list-style-type: none;
@@ -81,13 +82,11 @@
 <body>
 
     <header>
-        <!-- Logo ajouté -->
         <img src="logo.png" alt="Logo">
         <h1>Scanner d'Inspection</h1>
     </header>
 
     <div class="container">
-        <!-- Section de vérification du numéro de machine -->
         <h2>Vérification d'une Machine</h2>
         <p>Entrez le numéro de machine pour vérifier l'inspection :</p>
         
@@ -98,15 +97,14 @@
     </div>
 
     <div class="container">
-        <!-- Section pour afficher toutes les machines nécessitant une inspection -->
-        <h2>Machines nécessitant une inspection</h2>
-        <button onclick="afficherMachinesAvecInspection()">Afficher les machines sur inspection pour grand client</button>
+        <h2>Machines nécessitant une inspection pour le Client X</h2>
+        <button onclick="afficherMachinesClientX()">Afficher les machines pour le Client X</button>
         
         <ul id="machinesList"></ul>
     </div>
 
     <script>
-        // L'URL du fichier Excel (depuis GitHub)
+        // L'URL du fichier Excel (depuis GitHub ou un autre serveur)
         const fileUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/inspection1.xlsx";
         
         // Fonction pour récupérer et lire le fichier Excel
@@ -129,57 +127,82 @@
 
             loadExcelFile(fileUrl).then(sheet => {
                 const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
-                let found = false;
+                let inspections = {
+                    periodique: false,
+                    annuelle: false
+                };
+
                 for (let row = range.s.r + 1; row <= range.e.r; row++) {
                     const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
                     const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
                     
                     if (machineCell && machineCell.v === machineNumber) {
-                        document.getElementById("result").textContent = `Inspection pour la machine ${machineNumber}: ${inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée'}`;
-                        found = true;
-                        break;
+                        if (inspectionCell && inspectionCell.v.includes("périodique")) {
+                            inspections.periodique = true;
+                        }
+                        if (inspectionCell && inspectionCell.v.includes("Annuelle")) {
+                            inspections.annuelle = true;
+                        }
                     }
                 }
-                if (!found) {
-                    document.getElementById("result").textContent = "Numéro de machine non trouvé.";
+
+                let resultText = `Inspection pour la machine ${machineNumber}:\n`;
+                if (inspections.periodique || inspections.annuelle) {
+                    resultText += `Type d'inspection :\n`;
+                    if (inspections.periodique) {
+                        resultText += `- Inspection sécurité périodique\n`;
+                    }
+                    if (inspections.annuelle) {
+                        resultText += `- Inspection sécurité Annuelle\n`;
+                    }
+                } else {
+                    resultText += `Aucune inspection requise pour cette machine.`;
                 }
+                document.getElementById("result").textContent = resultText;
             }).catch(error => {
                 console.error("Erreur de chargement du fichier Excel :", error);
                 document.getElementById("result").textContent = "Erreur lors du chargement du fichier.";
             });
         }
 
-        // Fonction pour afficher toutes les machines avec un "X" dans la colonne C (inspection nécessaire)
-        function afficherMachinesAvecInspection() {
+        // Fonction pour afficher les machines nécessitant une inspection pour le Client X
+        function afficherMachinesClientX() {
             loadExcelFile(fileUrl).then(sheet => {
                 const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
-                const machinesAvecInspection = [];
+                const machinesClientX = {};
                 
                 for (let row = range.s.r + 1; row <= range.e.r; row++) {
                     const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
                     const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
-                    const xCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Colonne C (pour "X")
+                    const clientXCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Colonne C
                     
                     // Si la colonne C contient un "X", on ajoute la machine à la liste
-                    if (xCell && xCell.v === 'X') {
-                        machinesAvecInspection.push({
-                            machine: machineCell.v,
-                            inspection: inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée'
-                        });
+                    if (clientXCell && clientXCell.v === 'X') {
+                        const machineNumber = machineCell.v;
+                        const inspection = inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée';
+
+                        if (!machinesClientX[machineNumber]) {
+                            machinesClientX[machineNumber] = [];
+                        }
+                        machinesClientX[machineNumber].push(inspection);
                     }
                 }
 
-                // Affichage des machines nécessitant une inspection
+                // Affichage des machines nécessitant une inspection pour le Client X
                 const machinesList = document.getElementById("machinesList");
                 machinesList.innerHTML = ''; // Vider la liste précédente
-                if (machinesAvecInspection.length > 0) {
-                    machinesAvecInspection.forEach(machine => {
+                if (Object.keys(machinesClientX).length > 0) {
+                    for (const machineNumber in machinesClientX) {
+                        const inspections = machinesClientX[machineNumber];
                         const li = document.createElement("li");
-                        li.textContent = `Machine ${machine.machine} : ${machine.inspection}`;
+                        li.textContent = `Machine ${machineNumber} :\n`;
+                        inspections.forEach(inspection => {
+                            li.textContent += `- ${inspection}\n`;
+                        });
                         machinesList.appendChild(li);
-                    });
+                    }
                 } else {
-                    machinesList.innerHTML = '<li>Aucune machine nécessitant une inspection.</li>';
+                    machinesList.innerHTML = '<li>Aucune machine nécessitant une inspection pour le Client X.</li>';
                 }
             }).catch(error => {
                 console.error("Erreur de chargement du fichier Excel :", error);
