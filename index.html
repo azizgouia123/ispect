@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portail du Technicien Routier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            width: 100%;
+        }
+        header img {
+            height: 100px; /* Taille du logo augmentée */
+            vertical-align: middle;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #fff;
+            margin-top: 10px;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        p {
+            font-size: 1.2em;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 80%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Pour que le contenu soit centré à la fois horizontalement et verticalement */
+        .content-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="content-wrapper">
+        <header>
+            <!-- Logo agrandi -->
+            <img src="logo.png" alt="Logo">
+            <h1>Bienvenue au Portail du Technicien Routier</h1>
+        </header>
+
+        <div class="container">
+            <p>Choisissez une option ci-dessous pour commencer votre travail :</p>
+
+            <!-- Boutons pour redirection -->
+            <button onclick="window.location.href='scanner.html'">Scanner d'Inspection</button>
+            <button onclick="window.location.href='index2.html'">PDF Inspection Préventive</button>
+        </div>
+    </div>
+
+</body>
+</html>
