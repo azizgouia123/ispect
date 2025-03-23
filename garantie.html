@@ -61,6 +61,9 @@
             width: 150px;
             margin-bottom: 20px;
         }
+        .photo-section {
+            margin-top: 20px;
+        }
         .photo-preview {
             display: flex;
             flex-wrap: wrap;
@@ -74,13 +77,18 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
+        .photo-section label {
+            cursor: pointer;
+            color: #4CAF50;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <!-- Logo dans la page web -->
-        <img src="logo.png" alt="Logo" class="logo">
+        <img src="logo.png" alt="Logo" class="logo"> <!-- Chemin relatif -->
 
         <h1>Procédure de Garantie</h1>
         <p>Vérifiez si la machine est sous garantie pour débloquer le formulaire.</p>
@@ -106,9 +114,17 @@
             <textarea id="commentaires" placeholder="Commentaires"></textarea>
 
             <!-- Section pour les photos -->
-            <label for="photos">Ajouter des photos (max 10) :</label>
-            <input type="file" id="photos" accept="image/*" multiple onchange="afficherPhotos()">
-            <div class="photo-preview" id="photoPreview"></div>
+            <div class="photo-section">
+                <label>Photos (maximum 5) :</label>
+                <div class="photo-preview" id="photoPreview"></div>
+                <div style="display: flex; gap: 10px;">
+                    <label style="cursor: pointer;">
+                        <input type="file" id="fileInput" accept="image/*" multiple 
+                               style="display: none;" onchange="handleFileSelect(event)">
+                        📤 Importer des photos
+                    </label>
+                </div>
+            </div>
 
             <button onclick="genererRapport()">Générer le rapport PDF</button>
         </div>
@@ -159,15 +175,15 @@
             }
         }
 
-        // Fonction pour afficher les photos en miniature
-        function afficherPhotos() {
+        // Fonction pour gérer la sélection des fichiers
+        function handleFileSelect(event) {
             const photoPreview = document.getElementById("photoPreview");
-            const files = document.getElementById("photos").files;
+            const files = event.target.files;
             photoPreview.innerHTML = ""; // Vider les miniatures précédentes
 
-            if (files.length > 10) {
-                alert("Vous ne pouvez sélectionner que 10 photos maximum.");
-                document.getElementById("photos").value = ""; // Réinitialiser le champ
+            if (files.length > 5) {
+                alert("Vous ne pouvez sélectionner que 5 photos maximum.");
+                event.target.value = ""; // Réinitialiser le champ
                 return;
             }
 
@@ -197,7 +213,7 @@
             const heuresEquipement = document.getElementById("heuresEquipement").value;
             const localisationPieces = document.getElementById("localisationPieces").value;
             const commentaires = document.getElementById("commentaires").value;
-            const photos = document.getElementById("photos").files;
+            const photos = document.getElementById("fileInput").files;
 
             // Vérifier que tous les champs obligatoires sont remplis
             if (!machineNumber || !bonTravail || !technicien || !equipement || !probleme || !cause || !solution || !tempsReparation || !tempsDeplacement || !heuresEquipement || !localisationPieces || !commentaires) {
@@ -210,7 +226,7 @@
             const doc = new jsPDF();
 
             // Ajouter le logo au PDF
-            const logoUrl = "logo1.png";
+            const logoUrl = "logo1.png"; // Chemin relatif
             const img = new Image();
             img.src = logoUrl;
             img.onload = function () {
