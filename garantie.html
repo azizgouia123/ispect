@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procédure de Garantie</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            font-size: 2em;
+            color: #333;
+        }
+        p {
+            font-size: 1.2em;
+            color: #555;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .form-section {
+            display: none; /* Masqué par défaut */
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Logo dans la page web -->
+        <img src="logo.png" alt="Logo" class="logo">
+
+        <h1>Procédure de Garantie</h1>
+        <p>Vérifiez si la machine est sous garantie pour débloquer le formulaire.</p>
+
+        <!-- Champ pour vérifier la garantie -->
+        <input type="text" id="machineNumber" placeholder="Numéro de machine">
+        <button onclick="verifierGarantie()">Vérifier la garantie</button>
+        <p id="message" class="error"></p>
+
+        <!-- Formulaire (débloqué si la machine est sous garantie) -->
+        <div id="formSection" class="form-section">
+            <h2>Formulaire de Garantie</h2>
+            <input type="text" id="bonTravail" placeholder="Bon de travail">
+            <input type="text" id="technicien" placeholder="Technicien">
+            <input type="text" id="equipement" placeholder="Équipement" readonly>
+            <input type="text" id="probleme" placeholder="Problème">
+            <input type="text" id="cause" placeholder="Cause">
+            <input type="text" id="solution" placeholder="Solution">
+            <input type="number" id="tempsReparation" placeholder="Temps de réparation (heures)">
+            <input type="number" id="tempsDeplacement" placeholder="Temps de déplacement (heures)">
+            <input type="number" id="heuresEquipement" placeholder="Heures de l'équipement">
+            <input type="text" id="localisationPieces" placeholder="Localisation des pièces">
+            <textarea id="commentaires" placeholder="Commentaires"></textarea>
+            <input type="file" id="photos" accept="image/*" multiple>
+            <button onclick="genererRapport()">Générer le rapport PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // URL du fichier Excel sur GitHub
+        const fileUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/garantie.xlsx";
+
+        // Fonction pour vérifier si la machine est sous garantie
+        async function verifierGarantie() {
+            const machineNumber = document.getElementById("machineNumber").value.trim();
+            if (!machineNumber) {
+                document.getElementById("message").textContent = "Veuillez entrer un numéro de machine.";
+                return;
+            }
+
+            try {
+                // Charger le fichier Excel
+                const response = await fetch(fileUrl);
+                const data = await response.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const range = XLSX.utils.decode_range(sheet['!ref']);
+
+                let found = false;
+                for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                    const cell = sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // Colonne A
+                    if (cell && cell.v === machineNumber) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) {
+                    document.getElementById("message").textContent = "La machine est sous garantie. Formulaire débloqué.";
+                    document.getElementById("formSection").style.display = "block"; // Afficher le formulaire
+
+                    // Remplir automatiquement le champ "Équipement" avec le numéro de machine
+                    document.getElementById("equipement").value = machineNumber;
+                } else {
+                    document.getElementById("message").textContent = "La machine n'est pas sous garantie.";
+                    document.getElementById("formSection").style.display = "none"; // Masquer le formulaire
+                }
+            } catch (error) {
+                console.error("Erreur de chargement du fichier Excel :", error);
+                document.getElementById("message").textContent = "Erreur lors de la vérification de la garantie.";
+            }
+        }
+
+        // Fonction pour générer le rapport PDF
+        function genererRapport() {
+            const machineNumber = document.getElementById("machineNumber").value.trim();
+            const bonTravail = document.getElementById("bonTravail").value;
+            const technicien = document.getElementById("technicien").value;
+            const equipement = document.getElementById("equipement").value;
+            const probleme = document.getElementById("probleme").value;
+            const cause = document.getElementById("cause").value;
+            const solution = document.getElementById("solution").value;
+            const tempsReparation = document.getElementById("tempsReparation").value;
+            const tempsDeplacement = document.getElementById("tempsDeplacement").value;
+            const heuresEquipement = document.getElementById("heuresEquipement").value;
+            const localisationPieces = document.getElementById("localisationPieces").value;
+            const commentaires = document.getElementById("commentaires").value;
+            const photos = document.getElementById("photos").files;
+
+            // Vérifier que tous les champs obligatoires sont remplis
+            if (!machineNumber || !bonTravail || !technicien || !equipement || !probleme || !cause || !solution || !tempsReparation || !tempsDeplacement || !heuresEquipement || !localisationPieces || !commentaires) {
+                alert("Veuillez remplir tous les champs du formulaire.");
+                return;
+            }
+
+            // Créer un nouveau document PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Ajouter le logo au PDF
+            const logoUrl = "logo1.png";
+            const img = new Image();
+            img.src = logoUrl;
+            img.onload = function () {
+                doc.addImage(img, 'PNG', 10, 10, 50, 20); // Ajustez la taille et la position du logo
+
+                // Ajouter les informations au PDF
+                doc.setFontSize(18);
+                doc.text("Rapport de Garantie", 70, 20);
+                doc.setFontSize(12);
+                doc.text(`Numéro de machine: ${machineNumber}`, 10, 40);
+                doc.text(`Bon de travail: ${bonTravail}`, 10, 50);
+                doc.text(`Technicien: ${technicien}`, 10, 60);
+                doc.text(`Équipement: ${equipement}`, 10, 70);
+                doc.text(`Problème: ${probleme}`, 10, 80);
+                doc.text(`Cause: ${cause}`, 10, 90);
+                doc.text(`Solution: ${solution}`, 10, 100);
+                doc.text(`Temps de réparation: ${tempsReparation} heures`, 10, 110);
+                doc.text(`Temps de déplacement: ${tempsDeplacement} heures`, 10, 120);
+                doc.text(`Heures de l'équipement: ${heuresEquipement}`, 10, 130);
+                doc.text(`Localisation des pièces: ${localisationPieces}`, 10, 140);
+                doc.text(`Commentaires: ${commentaires}`, 10, 150);
+
+                // Ajouter les photos (optionnel)
+                if (photos.length > 0) {
+                    doc.text("Photos jointes :", 10, 160);
+                    let yOffset = 170;
+                    for (let i = 0; i < photos.length; i++) {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const img = new Image();
+                            img.src = event.target.result;
+                            img.onload = function () {
+                                doc.addImage(img, 'JPEG', 10, yOffset, 50, 50);
+                                yOffset += 60;
+                                if (i === photos.length - 1) {
+                                    doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF
+                                }
+                            };
+                        };
+                        reader.readAsDataURL(photos[i]);
+                    }
+                } else {
+                    doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF sans photos
+                }
+            };
+        }
+    </script>
+</body>
+</html>
