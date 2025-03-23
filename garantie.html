@@ -225,70 +225,66 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Ajouter le logo au PDF
-            const logoUrl = "logo1.png"; // Chemin relatif
-            const img = new Image();
-            img.src = logoUrl;
-            img.onload = function () {
-                doc.addImage(img, 'PNG', 10, 10, 50, 20); // Ajustez la taille et la position du logo
+            // Ajouter le logo2.png au PDF
+            const logo2Url = 'logo2.png'; // Chemin relatif vers le logo
+            doc.addImage(logo2Url, 'PNG', 10, 10, 50, 20); // Ajustez les coordonnées et la taille selon vos besoins
 
-                // Titre du PDF
-                doc.setFontSize(24); // Titre plus grand
+            // Titre du PDF
+            doc.setFontSize(24); // Titre plus grand
+            doc.setTextColor(0, 0, 255); // Couleur bleue
+            doc.text("Rapport de Garantie", 70, 20);
+
+            // Informations du formulaire
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0); // Couleur noire
+            doc.text(`Numéro de machine: ${machineNumber}`, 10, 40);
+            doc.text(`Bon de travail: ${bonTravail}`, 10, 50);
+            doc.text(`Technicien: ${technicien}`, 10, 60);
+            doc.text(`Équipement: ${equipement}`, 10, 70);
+            doc.text(`Problème: ${probleme}`, 10, 80);
+            doc.text(`Cause: ${cause}`, 10, 90);
+            doc.text(`Solution: ${solution}`, 10, 100);
+            doc.text(`Temps de réparation: ${tempsReparation} heures`, 10, 110);
+            doc.text(`Temps de déplacement: ${tempsDeplacement} heures`, 10, 120);
+            doc.text(`Heures de l'équipement: ${heuresEquipement}`, 10, 130);
+            doc.text(`Localisation des pièces: ${localisationPieces}`, 10, 140);
+            doc.text(`Commentaires: ${commentaires}`, 10, 150);
+
+            // Ajouter les photos (optionnel)
+            if (photos.length > 0) {
                 doc.setTextColor(0, 0, 255); // Couleur bleue
-                doc.text("Rapport de Garantie", 70, 20);
+                doc.text("Photos jointes :", 10, 160);
+                let yOffset = 170;
 
-                // Informations du formulaire
-                doc.setFontSize(12);
-                doc.setTextColor(0, 0, 0); // Couleur noire
-                doc.text(`Numéro de machine: ${machineNumber}`, 10, 40);
-                doc.text(`Bon de travail: ${bonTravail}`, 10, 50);
-                doc.text(`Technicien: ${technicien}`, 10, 60);
-                doc.text(`Équipement: ${equipement}`, 10, 70);
-                doc.text(`Problème: ${probleme}`, 10, 80);
-                doc.text(`Cause: ${cause}`, 10, 90);
-                doc.text(`Solution: ${solution}`, 10, 100);
-                doc.text(`Temps de réparation: ${tempsReparation} heures`, 10, 110);
-                doc.text(`Temps de déplacement: ${tempsDeplacement} heures`, 10, 120);
-                doc.text(`Heures de l'équipement: ${heuresEquipement}`, 10, 130);
-                doc.text(`Localisation des pièces: ${localisationPieces}`, 10, 140);
-                doc.text(`Commentaires: ${commentaires}`, 10, 150);
+                for (let i = 0; i < photos.length; i++) {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        const img = new Image();
+                        img.src = event.target.result;
+                        img.onload = function () {
+                            // Ajouter une nouvelle page si nécessaire
+                            if (yOffset + 100 > doc.internal.pageSize.height) {
+                                doc.addPage();
+                                yOffset = 10; // Réinitialiser l'offset pour la nouvelle page
+                            }
 
-                // Ajouter les photos (optionnel)
-                if (photos.length > 0) {
-                    doc.setTextColor(0, 0, 255); // Couleur bleue
-                    doc.text("Photos jointes :", 10, 160);
-                    let yOffset = 170;
+                            // Ajouter la photo en grand (demi-page ou plus)
+                            const imgWidth = doc.internal.pageSize.width - 20; // Largeur maximale
+                            const imgHeight = (img.height * imgWidth) / img.width; // Conserver le ratio
+                            doc.addImage(img, 'JPEG', 10, yOffset, imgWidth, imgHeight);
+                            yOffset += imgHeight + 10; // Espacement entre les photos
 
-                    for (let i = 0; i < photos.length; i++) {
-                        const reader = new FileReader();
-                        reader.onload = function (event) {
-                            const img = new Image();
-                            img.src = event.target.result;
-                            img.onload = function () {
-                                // Ajouter une nouvelle page si nécessaire
-                                if (yOffset + 100 > doc.internal.pageSize.height) {
-                                    doc.addPage();
-                                    yOffset = 10; // Réinitialiser l'offset pour la nouvelle page
-                                }
-
-                                // Ajouter la photo en grand (demi-page ou plus)
-                                const imgWidth = doc.internal.pageSize.width - 20; // Largeur maximale
-                                const imgHeight = (img.height * imgWidth) / img.width; // Conserver le ratio
-                                doc.addImage(img, 'JPEG', 10, yOffset, imgWidth, imgHeight);
-                                yOffset += imgHeight + 10; // Espacement entre les photos
-
-                                // Sauvegarder le PDF après la dernière photo
-                                if (i === photos.length - 1) {
-                                    doc.save("rapport_garantie.pdf");
-                                }
-                            };
+                            // Sauvegarder le PDF après la dernière photo
+                            if (i === photos.length - 1) {
+                                doc.save("rapport_garantie.pdf");
+                            }
                         };
-                        reader.readAsDataURL(photos[i]);
-                    }
-                } else {
-                    doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF sans photos
+                    };
+                    reader.readAsDataURL(photos[i]);
                 }
-            };
+            } else {
+                doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF sans photos
+            }
         }
     </script>
 </body>
