@@ -61,6 +61,19 @@
             width: 150px;
             margin-bottom: 20px;
         }
+        .photo-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .photo-preview img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
@@ -91,7 +104,12 @@
             <input type="number" id="heuresEquipement" placeholder="Heures de l'équipement">
             <input type="text" id="localisationPieces" placeholder="Localisation des pièces">
             <textarea id="commentaires" placeholder="Commentaires"></textarea>
-            <input type="file" id="photos" accept="image/*" multiple>
+
+            <!-- Section pour les photos -->
+            <label for="photos">Ajouter des photos (max 10) :</label>
+            <input type="file" id="photos" accept="image/*" multiple onchange="afficherPhotos()">
+            <div class="photo-preview" id="photoPreview"></div>
+
             <button onclick="genererRapport()">Générer le rapport PDF</button>
         </div>
     </div>
@@ -141,6 +159,30 @@
             }
         }
 
+        // Fonction pour afficher les photos en miniature
+        function afficherPhotos() {
+            const photoPreview = document.getElementById("photoPreview");
+            const files = document.getElementById("photos").files;
+            photoPreview.innerHTML = ""; // Vider les miniatures précédentes
+
+            if (files.length > 10) {
+                alert("Vous ne pouvez sélectionner que 10 photos maximum.");
+                document.getElementById("photos").value = ""; // Réinitialiser le champ
+                return;
+            }
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const img = document.createElement("img");
+                    img.src = event.target.result;
+                    photoPreview.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         // Fonction pour générer le rapport PDF
         function genererRapport() {
             const machineNumber = document.getElementById("machineNumber").value.trim();
@@ -174,10 +216,14 @@
             img.onload = function () {
                 doc.addImage(img, 'PNG', 10, 10, 50, 20); // Ajustez la taille et la position du logo
 
-                // Ajouter les informations au PDF
-                doc.setFontSize(18);
+                // Titre du PDF
+                doc.setFontSize(24); // Titre plus grand
+                doc.setTextColor(0, 0, 255); // Couleur bleue
                 doc.text("Rapport de Garantie", 70, 20);
+
+                // Informations du formulaire
                 doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0); // Couleur noire
                 doc.text(`Numéro de machine: ${machineNumber}`, 10, 40);
                 doc.text(`Bon de travail: ${bonTravail}`, 10, 50);
                 doc.text(`Technicien: ${technicien}`, 10, 60);
@@ -193,6 +239,7 @@
 
                 // Ajouter les photos (optionnel)
                 if (photos.length > 0) {
+                    doc.setTextColor(0, 0, 255); // Couleur bleue
                     doc.text("Photos jointes :", 10, 160);
                     let yOffset = 170;
                     for (let i = 0; i < photos.length; i++) {
