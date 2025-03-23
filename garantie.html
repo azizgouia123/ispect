@@ -63,6 +63,16 @@
         }
         .photo-section {
             margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .photo-section label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
         }
         .photo-preview {
             display: flex;
@@ -77,10 +87,19 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        .photo-section label {
+        .import-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
-            color: #4CAF50;
-            font-weight: bold;
+            font-size: 1em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .import-button:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -117,22 +136,21 @@
             <div class="photo-section">
                 <label>Photos (maximum 5) :</label>
                 <div class="photo-preview" id="photoPreview"></div>
-                <div style="display: flex; gap: 10px;">
-                    <label style="cursor: pointer;">
-                        <input type="file" id="fileInput" accept="image/*" multiple 
-                               style="display: none;" onchange="handleFileSelect(event)">
-                        📤 Importer des photos
-                    </label>
-                </div>
+                <button class="import-button" onclick="document.getElementById('fileInput').click()">
+                    📤 Importer des photos
+                </button>
+                <input type="file" id="fileInput" accept="image/*" multiple 
+                       style="display: none;" onchange="handleFileSelect(event)">
             </div>
 
-            <button onclick="genererRapport()">Générer le rapport PDF</button>
+            <button onclick="validateForm()">Générer le rapport PDF</button>
         </div>
     </div>
 
     <script>
         // URL du fichier Excel sur GitHub
         const fileUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/garantie.xlsx";
+        const photos = []; // Stocker les photos importées
 
         // Fonction pour vérifier si la machine est sous garantie
         async function verifierGarantie() {
@@ -187,104 +205,132 @@
                 return;
             }
 
+            photos.length = 0; // Réinitialiser le tableau des photos
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const reader = new FileReader();
                 reader.onload = function (event) {
-                    const img = document.createElement("img");
+                    const img = new Image();
                     img.src = event.target.result;
-                    photoPreview.appendChild(img);
+                    photos.push(img); // Ajouter l'image au tableau des photos
+                    const previewImg = document.createElement("img");
+                    previewImg.src = event.target.result;
+                    photoPreview.appendChild(previewImg);
                 };
                 reader.readAsDataURL(file);
             }
         }
 
-        // Fonction pour générer le rapport PDF
-        function genererRapport() {
-            const machineNumber = document.getElementById("machineNumber").value.trim();
-            const bonTravail = document.getElementById("bonTravail").value;
-            const technicien = document.getElementById("technicien").value;
-            const equipement = document.getElementById("equipement").value;
-            const probleme = document.getElementById("probleme").value;
-            const cause = document.getElementById("cause").value;
-            const solution = document.getElementById("solution").value;
-            const tempsReparation = document.getElementById("tempsReparation").value;
-            const tempsDeplacement = document.getElementById("tempsDeplacement").value;
-            const heuresEquipement = document.getElementById("heuresEquipement").value;
-            const localisationPieces = document.getElementById("localisationPieces").value;
-            const commentaires = document.getElementById("commentaires").value;
-            const photos = document.getElementById("fileInput").files;
+        // Fonction pour valider le formulaire
+        function validateForm() {
+            const requiredFields = [
+                "machineNumber", "bonTravail", "technicien", "equipement", "probleme",
+                "cause", "solution", "tempsReparation", "tempsDeplacement", "heuresEquipement",
+                "localisationPieces", "commentaires"
+            ];
+            let isValid = true;
 
-            // Vérifier que tous les champs obligatoires sont remplis
-            if (!machineNumber || !bonTravail || !technicien || !equipement || !probleme || !cause || !solution || !tempsReparation || !tempsDeplacement || !heuresEquipement || !localisationPieces || !commentaires) {
-                alert("Veuillez remplir tous les champs du formulaire.");
-                return;
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.style.borderColor = "red";
+                } else {
+                    input.style.borderColor = "#ccc";
+                }
+            });
+
+            if (isValid) {
+                genererPDF();
+            } else {
+                alert("Veuillez remplir tous les champs obligatoires.");
             }
+        }
 
-            // Créer un nouveau document PDF
+        // Fonction pour générer le PDF
+        async function genererPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Ajouter le logo2.png au PDF
-            const logo2Url = 'logo2.png'; // Chemin relatif vers le logo
-            doc.addImage(logo2Url, 'PNG', 10, 10, 50, 20); // Ajustez les coordonnées et la taille selon vos besoins
+            // URL brute de GitHub pour logo2.png
+            const logoUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/logo2.png";
 
-            // Titre du PDF
-            doc.setFontSize(24); // Titre plus grand
-            doc.setTextColor(0, 0, 255); // Couleur bleue
-            doc.text("Rapport de Garantie", 70, 20);
+            // Charger l'image depuis GitHub
+            try {
+                const logoPDF = await loadImage(logoUrl);
+                doc.addImage(logoPDF.src, "PNG", 160, 10, 30, 15); // Ajouter le logo
+            } catch (error) {
+                console.error("Erreur de chargement du logo :", error);
+            }
 
-            // Informations du formulaire
+            // En-tête du PDF
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 74, 153); // Couleur #004a99
+            doc.text("Rapport de Garantie", 15, 20);
+
+            // Informations de base
             doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0); // Couleur noire
-            doc.text(`Numéro de machine: ${machineNumber}`, 10, 40);
-            doc.text(`Bon de travail: ${bonTravail}`, 10, 50);
-            doc.text(`Technicien: ${technicien}`, 10, 60);
-            doc.text(`Équipement: ${equipement}`, 10, 70);
-            doc.text(`Problème: ${probleme}`, 10, 80);
-            doc.text(`Cause: ${cause}`, 10, 90);
-            doc.text(`Solution: ${solution}`, 10, 100);
-            doc.text(`Temps de réparation: ${tempsReparation} heures`, 10, 110);
-            doc.text(`Temps de déplacement: ${tempsDeplacement} heures`, 10, 120);
-            doc.text(`Heures de l'équipement: ${heuresEquipement}`, 10, 130);
-            doc.text(`Localisation des pièces: ${localisationPieces}`, 10, 140);
-            doc.text(`Commentaires: ${commentaires}`, 10, 150);
+            doc.setTextColor(0, 0, 0); // Noir
+            let y = 35;
+
+            const fields = [
+                { label: "Numéro de machine:", value: document.getElementById("machineNumber").value },
+                { label: "Bon de travail:", value: document.getElementById("bonTravail").value },
+                { label: "Technicien:", value: document.getElementById("technicien").value },
+                { label: "Équipement:", value: document.getElementById("equipement").value },
+                { label: "Problème:", value: document.getElementById("probleme").value },
+                { label: "Cause:", value: document.getElementById("cause").value },
+                { label: "Solution:", value: document.getElementById("solution").value },
+                { label: "Temps de réparation:", value: `${document.getElementById("tempsReparation").value} heures` },
+                { label: "Temps de déplacement:", value: `${document.getElementById("tempsDeplacement").value} heures` },
+                { label: "Heures de l'équipement:", value: document.getElementById("heuresEquipement").value },
+                { label: "Localisation des pièces:", value: document.getElementById("localisationPieces").value },
+                { label: "Commentaires:", value: document.getElementById("commentaires").value }
+            ];
+
+            fields.forEach(field => {
+                // Libellé en gras
+                doc.setFont("helvetica", "bold");
+                doc.text(field.label, 15, y);
+
+                // Valeur en normal
+                doc.setFont("helvetica", "normal");
+                doc.text(field.value, 70, y);
+
+                y += 10; // Espacement entre les lignes
+            });
 
             // Ajouter les photos (optionnel)
             if (photos.length > 0) {
-                doc.setTextColor(0, 0, 255); // Couleur bleue
-                doc.text("Photos jointes :", 10, 160);
-                let yOffset = 170;
+                doc.addPage();
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text("Photos jointes :", 15, 20);
 
-                for (let i = 0; i < photos.length; i++) {
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        const img = new Image();
-                        img.src = event.target.result;
-                        img.onload = function () {
-                            // Ajouter une nouvelle page si nécessaire
-                            if (yOffset + 100 > doc.internal.pageSize.height) {
-                                doc.addPage();
-                                yOffset = 10; // Réinitialiser l'offset pour la nouvelle page
-                            }
-
-                            // Ajouter la photo en grand (demi-page ou plus)
-                            const imgWidth = doc.internal.pageSize.width - 20; // Largeur maximale
-                            const imgHeight = (img.height * imgWidth) / img.width; // Conserver le ratio
-                            doc.addImage(img, 'JPEG', 10, yOffset, imgWidth, imgHeight);
-                            yOffset += imgHeight + 10; // Espacement entre les photos
-
-                            // Sauvegarder le PDF après la dernière photo
-                            if (i === photos.length - 1) {
-                                doc.save("rapport_garantie.pdf");
-                            }
-                        };
-                    };
-                    reader.readAsDataURL(photos[i]);
-                }
-            } else {
-                doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF sans photos
+                let x = 15, yPhoto = 30;
+                photos.forEach((img, index) => {
+                    if (index > 0 && index % 2 === 0) {
+                        yPhoto += 60;
+                        x = 15;
+                    }
+                    doc.addImage(img.src, "JPEG", x, yPhoto, 85, 55);
+                    x += 90;
+                });
             }
+
+            // Enregistrer le PDF
+            doc.save(`Rapport_Garantie_${document.getElementById("machineNumber").value}.pdf`);
+        }
+
+        // Fonction pour charger une image
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = (error) => reject(error);
+                img.src = src;
+            });
         }
     </script>
 </body>
