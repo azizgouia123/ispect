@@ -242,16 +242,28 @@
                     doc.setTextColor(0, 0, 255); // Couleur bleue
                     doc.text("Photos jointes :", 10, 160);
                     let yOffset = 170;
+
                     for (let i = 0; i < photos.length; i++) {
                         const reader = new FileReader();
                         reader.onload = function (event) {
                             const img = new Image();
                             img.src = event.target.result;
                             img.onload = function () {
-                                doc.addImage(img, 'JPEG', 10, yOffset, 50, 50);
-                                yOffset += 60;
+                                // Ajouter une nouvelle page si nécessaire
+                                if (yOffset + 100 > doc.internal.pageSize.height) {
+                                    doc.addPage();
+                                    yOffset = 10; // Réinitialiser l'offset pour la nouvelle page
+                                }
+
+                                // Ajouter la photo en grand (demi-page ou plus)
+                                const imgWidth = doc.internal.pageSize.width - 20; // Largeur maximale
+                                const imgHeight = (img.height * imgWidth) / img.width; // Conserver le ratio
+                                doc.addImage(img, 'JPEG', 10, yOffset, imgWidth, imgHeight);
+                                yOffset += imgHeight + 10; // Espacement entre les photos
+
+                                // Sauvegarder le PDF après la dernière photo
                                 if (i === photos.length - 1) {
-                                    doc.save("rapport_garantie.pdf"); // Sauvegarder le PDF
+                                    doc.save("rapport_garantie.pdf");
                                 }
                             };
                         };
