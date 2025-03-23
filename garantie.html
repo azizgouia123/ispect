@@ -62,17 +62,10 @@
             margin-bottom: 20px;
         }
         .photo-section {
-            margin-top: 20px;
+            margin: 20px 0;
             padding: 15px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
+            border: 2px solid #004a99;
             border-radius: 5px;
-        }
-        .photo-section label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #333;
         }
         .photo-preview {
             display: flex;
@@ -87,19 +80,17 @@
             border-radius: 5px;
             border: 1px solid #ccc;
         }
-        .import-button {
-            background-color: #007bff;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
+        .photo-section label {
             cursor: pointer;
-            font-size: 1em;
-            display: inline-block;
-            margin-top: 10px;
+            color: #4CAF50;
+            font-weight: bold;
         }
-        .import-button:hover {
-            background-color: #0056b3;
+        .warning-text {
+            color: red;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin: 20px 0;
+            text-align: center;
         }
     </style>
 </head>
@@ -130,18 +121,25 @@
             <input type="number" id="tempsDeplacement" placeholder="Temps de déplacement (heures)">
             <input type="number" id="heuresEquipement" placeholder="Heures de l'équipement">
             <input type="text" id="localisationPieces" placeholder="Localisation des pièces">
-            <textarea id="commentaires" placeholder="Commentaires"></textarea>
+            <textarea id="commentaires" placeholder="Commentaires (optionnel)"></textarea>
 
             <!-- Section pour les photos -->
             <div class="photo-section">
                 <label>Photos (maximum 5) :</label>
                 <div class="photo-preview" id="photoPreview"></div>
-                <button class="import-button" onclick="document.getElementById('fileInput').click()">
-                    📤 Importer des photos
-                </button>
-                <input type="file" id="fileInput" accept="image/*" multiple 
-                       style="display: none;" onchange="handleFileSelect(event)">
+                <div style="display: flex; gap: 10px;">
+                    <label style="cursor: pointer;">
+                        <input type="file" id="fileInput" accept="image/*" multiple 
+                               style="display: none;" onchange="handleFileSelect(event)">
+                        📤 Importer des photos
+                    </label>
+                </div>
             </div>
+
+            <!-- Texte en rouge et en gras -->
+            <p class="warning-text">
+                Le rapport généré doit être envoyé à <strong>johanne.hebert@loutec.com</strong> et votre superviseur.
+            </p>
 
             <button onclick="validateForm()">Générer le rapport PDF</button>
         </div>
@@ -197,15 +195,13 @@
         function handleFileSelect(event) {
             const photoPreview = document.getElementById("photoPreview");
             const files = event.target.files;
-            photoPreview.innerHTML = ""; // Vider les miniatures précédentes
 
-            if (files.length > 5) {
+            if (photos.length + files.length > 5) {
                 alert("Vous ne pouvez sélectionner que 5 photos maximum.");
                 event.target.value = ""; // Réinitialiser le champ
                 return;
             }
 
-            photos.length = 0; // Réinitialiser le tableau des photos
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const reader = new FileReader();
@@ -226,7 +222,7 @@
             const requiredFields = [
                 "machineNumber", "bonTravail", "technicien", "equipement", "probleme",
                 "cause", "solution", "tempsReparation", "tempsDeplacement", "heuresEquipement",
-                "localisationPieces", "commentaires"
+                "localisationPieces"
             ];
             let isValid = true;
 
@@ -286,7 +282,7 @@
                 { label: "Temps de déplacement:", value: `${document.getElementById("tempsDeplacement").value} heures` },
                 { label: "Heures de l'équipement:", value: document.getElementById("heuresEquipement").value },
                 { label: "Localisation des pièces:", value: document.getElementById("localisationPieces").value },
-                { label: "Commentaires:", value: document.getElementById("commentaires").value }
+                { label: "Commentaires:", value: document.getElementById("commentaires").value || "Aucun" }
             ];
 
             fields.forEach(field => {
