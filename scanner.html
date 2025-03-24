@@ -6,6 +6,7 @@
     <title>Scanner d'Inspection</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
     <style>
+        /* Le même style que précédemment */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f9;
@@ -77,6 +78,14 @@
         li:hover {
             background-color: #ddd;
         }
+
+        /* Nouveau style pour la mention "Sous garantie" */
+        .garantie {
+            color: red;
+            font-size: 1.5em;
+            margin-top: 10px;
+            display: block; /* Permet de le séparer des autres informations */
+        }
     </style>
 </head>
 <body>
@@ -88,7 +97,7 @@
 
     <div class="container">
         <h2>Vérification d'une Machine</h2>
-        <p>Entrez le numéro de machine pour vérifier si une inspection est nécessaire :</p>
+        <p>Entrez le numéro de machine pour vérifier si une inspection est nécessaire et si elle est sous garantie :</p>
         
         <input type="text" id="machineNumber" placeholder="Numéro de machine">
         <button onclick="verifierMachine()">Vérifier</button>
@@ -96,18 +105,12 @@
         <p id="result"></p>
     </div>
 
-    <div class="container">
-        <h2>Machines nécessitant une inspection pour le Client X</h2>
-        <button onclick="afficherMachinesClientX()">Afficher les machines pour le Client X</button>
-        
-        <ul id="machinesList"></ul>
-    </div>
-
     <script>
-        // L'URL du fichier Excel (depuis GitHub ou un autre serveur)
-        const fileUrl = "https://raw.githubusercontent.com/azizgouia123/ispect/main/inspection1.xlsx";
+        // L'URL des fichiers Excel (inspection et garantie)
+        const fileUrlInspection = "https://raw.githubusercontent.com/azizgouia123/ispect/main/inspection1.xlsx";
+        const fileUrlGarantie = "https://raw.githubusercontent.com/azizgouia123/ispect/main/garantie.xlsx";
         
-        // Fonction pour récupérer et lire le fichier Excel
+        // Fonction pour charger un fichier Excel
         function loadExcelFile(url) {
             return fetch(url)
                 .then(response => response.arrayBuffer())
@@ -125,18 +128,24 @@
                 return;
             }
 
-            loadExcelFile(fileUrl).then(sheet => {
-                const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
+            Promise.all([
+                loadExcelFile(fileUrlInspection),
+                loadExcelFile(fileUrlGarantie)
+            ]).then(([inspectionSheet, garantieSheet]) => {
+                const rangeInspection = XLSX.utils.decode_range(inspectionSheet['!ref']);
+                const rangeGarantie = XLSX.utils.decode_range(garantieSheet['!ref']);
                 let inspections = {
                     periodique: false,
                     annuelle: false
                 };
+                let sousGarantie = false;
 
-                for (let row = range.s.r + 1; row <= range.e.r; row++) {
-                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
-                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
+                // Vérification des inspections
+                for (let row = rangeInspection.s.r + 1; row <= rangeInspection.e.r; row++) {
+                    const machineCell = inspectionSheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
+                    const inspectionCell = inspectionSheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
                     
-                    if (machineCell && machineCell.v === machineNumber) {
+                    if (machineCell && machineCell.v.toString() === machineNumber) {  // Conversion en string
                         if (inspectionCell && inspectionCell.v.includes("périodique")) {
                             inspections.periodique = true;
                         }
@@ -146,7 +155,17 @@
                     }
                 }
 
-                let resultText = `Inspection pour la machine ${machineNumber}:\n`;
+                // Vérification de la garantie
+                for (let row = rangeGarantie.s.r + 1; row <= rangeGarantie.e.r; row++) {
+                    const machineCell = garantieSheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
+                    if (machineCell && machineCell.v.toString() === machineNumber) {  // Conversion en string
+                        sousGarantie = true;
+                    }
+                }
+
+                // Affichage des résultats
+                let resultText = `Vérification pour la machine ${machineNumber}:\n`;
+
                 if (inspections.periodique || inspections.annuelle) {
                     resultText += `Type d'inspection à faire:\n`;
                     if (inspections.periodique) {
@@ -156,57 +175,16 @@
                         resultText += `- Inspection sécurité Annuelle\n`;
                     }
                 } else {
-                    resultText += `Aucune inspection requise pour cette machine.`;
+                    resultText += `Aucune inspection requise pour cette machine.\n`;
                 }
-                document.getElementById("result").textContent = resultText;
+
+                // Ajout de la mention "Sous garantie" avec style
+                resultText += `\n<span class="garantie">Sous garantie: ${sousGarantie ? "Oui" : "Non"}</span>`;
+
+                document.getElementById("result").innerHTML = resultText;
             }).catch(error => {
-                console.error("Erreur de chargement du fichier Excel :", error);
-                document.getElementById("result").textContent = "Erreur lors du chargement du fichier.";
-            });
-        }
-
-        // Fonction pour afficher les machines nécessitant une inspection pour le Client X
-        function afficherMachinesClientX() {
-            loadExcelFile(fileUrl).then(sheet => {
-                const range = XLSX.utils.decode_range(sheet['!ref']); // Récupère la plage de données
-                const machinesClientX = {};
-                
-                for (let row = range.s.r + 1; row <= range.e.r; row++) {
-                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Colonne A
-                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Colonne B
-                    const clientXCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Colonne C
-                    
-                    // Si la colonne C contient un "X", on ajoute la machine à la liste
-                    if (clientXCell && clientXCell.v === 'X') {
-                        const machineNumber = machineCell.v;
-                        const inspection = inspectionCell ? inspectionCell.v : 'Pas d\'inspection spécifiée';
-
-                        if (!machinesClientX[machineNumber]) {
-                            machinesClientX[machineNumber] = [];
-                        }
-                        machinesClientX[machineNumber].push(inspection);
-                    }
-                }
-
-                // Affichage des machines nécessitant une inspection pour le Client X
-                const machinesList = document.getElementById("machinesList");
-                machinesList.innerHTML = ''; // Vider la liste précédente
-                if (Object.keys(machinesClientX).length > 0) {
-                    for (const machineNumber in machinesClientX) {
-                        const inspections = machinesClientX[machineNumber];
-                        const li = document.createElement("li");
-                        li.textContent = `Machine ${machineNumber} :\n`;
-                        inspections.forEach(inspection => {
-                            li.textContent += `- ${inspection}\n`;
-                        });
-                        machinesList.appendChild(li);
-                    }
-                } else {
-                    machinesList.innerHTML = '<li>Aucune machine nécessitant une inspection pour le Client X.</li>';
-                }
-            }).catch(error => {
-                console.error("Erreur de chargement du fichier Excel :", error);
-                alert("Erreur lors du chargement du fichier.");
+                console.error("Erreur de chargement des fichiers Excel :", error);
+                document.getElementById("result").textContent = "Erreur lors du chargement des fichiers.";
             });
         }
     </script>
