@@ -169,7 +169,8 @@
                 let found = false;
                 for (let row = range.s.r + 1; row <= range.e.r; row++) {
                     const cell = sheet[XLSX.utils.encode_cell({ r: row, c: 0 })]; // Colonne A
-                    if (cell && cell.v === machineNumber) {
+                    const cellValue = String(cell.v).trim(); // Convertir et retirer les espaces
+                    if (cellValue === machineNumber) { // Comparaison stricte
                         found = true;
                         break;
                     }
