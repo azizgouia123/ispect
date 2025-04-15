@@ -2,87 +2,43 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Vérification des inspections</title>
+    <title>Inspection</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 700px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        h1, h2 {
-            text-align: center;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin: 12px 0;
-            box-sizing: border-box;
-        }
-
-        button {
-            padding: 10px 20px;
-            margin-bottom: 12px;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: block;
-            width: 100%;
-        }
-
-        button:hover {
-            background-color: #2980b9;
+            font-family: Arial;
         }
 
         .result {
             margin-top: 20px;
-            padding: 15px;
-            background-color: #ecf0f1;
-            border-left: 4px solid #2980b9;
-            font-size: 16px;
         }
 
         .inspection {
-            font-size: 1.2em;
+            font-size: 18px;
             font-weight: bold;
-            color: #2c3e50;
             margin-top: 10px;
         }
 
         .garantie {
             color: green;
-            font-weight: bold;
+        }
+
+        input, button {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Vérification des inspections</h1>
-        <input type="text" id="machineNumber" placeholder="Entrez le numéro de la machine">
-        <button onclick="verifierMachine()">Vérifier</button>
+    <h1>Inspection</h1>
+    <label for="machineNumber">Numéro de machine :</label>
+    <input type="text" id="machineNumber">
+    <button onclick="verifierMachine()">Vérifier</button>
 
-        <hr>
+    <br><br>
 
-        <h2>Liste des Machines d'un Client</h2>
-        <input type="text" id="clientNumber" placeholder="Numéro du client (colonne C)">
-        <button onclick="listerMachinesClient()">Liste Inspection Client Majeur</button>
+    <button onclick="listerMachinesClient()">Liste Inspection Client Majeur</button>
 
-        <div id="result" class="result"></div>
-    </div>
+    <div class="result" id="result"></div>
 
     <script>
         const fileUrlInspection = "inspection1.xlsx";
@@ -136,61 +92,56 @@
                     }
                 }
 
-                let resultText = `<strong>Vérification pour la machine ${machineNumber}:</strong><br>`;
+                let resultText = `<div><strong>Machine : ${machineNumber}</strong></div>`;
                 if (inspections.periodique || inspections.annuelle) {
-                    resultText += `<div class="inspection">Type d'inspection à faire :</div>`;
+                    resultText += `<div class="inspection">Type d'inspection :</div>`;
                     if (inspections.periodique) {
                         resultText += `- Inspection sécurité périodique<br>`;
                     }
                     if (inspections.annuelle) {
-                        resultText += `- Inspection sécurité Annuelle<br>`;
+                        resultText += `- Inspection sécurité annuelle<br>`;
                     }
                 } else {
                     resultText += `Aucune inspection requise pour cette machine.<br>`;
                 }
 
-                resultText += `<span class="garantie">Sous garantie: ${sousGarantie ? "Oui" : "Non"}</span>`;
+                resultText += `<div class="garantie">Sous garantie : ${sousGarantie ? "Oui" : "Non"}</div>`;
                 document.getElementById("result").innerHTML = resultText;
             }).catch(error => {
-                console.error("Erreur de chargement des fichiers Excel :", error);
-                document.getElementById("result").textContent = "Erreur lors du chargement des fichiers.";
+                console.error("Erreur de chargement des fichiers :", error);
+                document.getElementById("result").textContent = "Erreur lors du chargement.";
             });
         }
 
         function listerMachinesClient() {
-            const clientNumber = document.getElementById("clientNumber").value.trim();
-            if (!clientNumber) {
-                alert("Veuillez entrer un numéro de client.");
-                return;
-            }
-
+            const clientTarget = "x"; // Le client qu'on veut filtrer
             loadExcelFile(fileUrlInspection).then(sheet => {
                 const range = XLSX.utils.decode_range(sheet['!ref']);
                 let machines = [];
 
                 for (let row = range.s.r + 1; row <= range.e.r; row++) {
-                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Col A
-                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})]; // Col B
-                    const clientCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Col C
+                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})];
+                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})];
+                    const clientCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})];
 
-                    if (clientCell && clientCell.v.toString() === clientNumber) {
+                    if (clientCell && clientCell.v.toString().trim().toLowerCase() === clientTarget) {
                         const machine = machineCell ? machineCell.v : "Inconnu";
                         const typeInspection = inspectionCell ? inspectionCell.v : "Non spécifiée";
-                        machines.push(`- ${machine} : ${typeInspection}`);
+                        machines.push(`${machine} : ${typeInspection}`);
                     }
                 }
 
-                let resultText = `<strong>Machines du client ${clientNumber} :</strong><br>`;
+                let resultText = `<div><strong>Machines du client "${clientTarget}" :</strong></div>`;
                 if (machines.length > 0) {
                     resultText += machines.join("<br>");
                 } else {
-                    resultText += "Aucune machine trouvée pour ce client.";
+                    resultText += "Aucune machine trouvée.";
                 }
 
                 document.getElementById("result").innerHTML = resultText;
             }).catch(error => {
-                console.error("Erreur de chargement du fichier Inspection :", error);
-                document.getElementById("result").textContent = "Erreur lors du chargement du fichier.";
+                console.error("Erreur :", error);
+                document.getElementById("result").textContent = "Erreur lors du chargement.";
             });
         }
     </script>
