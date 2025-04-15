@@ -2,59 +2,130 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Inspection</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner d'Inspection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
     <style>
+        /* Le même style que précédemment */
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
         }
-
-        .result {
-            margin-top: 20px;
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
         }
-
-        .inspection {
-            font-size: 18px;
-            font-weight: bold;
+        header img {
+            height: 50px;
+            vertical-align: middle;
+        }
+        h1 {
+            font-size: 2em;
+            margin-top: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            width: 80%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             margin-top: 10px;
         }
-
-        .garantie {
-            color: green;
+        button:hover {
+            background-color: #45a049;
         }
-
-        input, button {
+        h2 {
+            color: #333;
+        }
+        #result, #clientList {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+            white-space: pre-line;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px;
             margin: 5px 0;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+        }
+        li:hover {
+            background-color: #ddd;
+        }
+        .garantie {
+            color: red;
+            font-size: 1.5em;
+            margin-top: 10px;
+            display: block;
+        }
+        .inspection-type {
+            font-size: 1.3em;
+            margin-top: 10px;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <h1>Inspection</h1>
-    <label for="machineNumber">Numéro de machine :</label>
-    <input type="text" id="machineNumber">
-    <button onclick="verifierMachine()">Vérifier</button>
 
-    <br><br>
+    <header>
+        <img src="logo.png" alt="Logo">
+        <h1>Scanner d'Inspection</h1>
+    </header>
 
-    <button onclick="listerMachinesClient()">Liste Inspection Client Majeur</button>
-
-    <div class="result" id="result"></div>
+    <div class="container">
+        <h2>Vérification d'une Machine</h2>
+        <p>Entrez le numéro de machine pour vérifier si une inspection est nécessaire et si elle est sous garantie :</p>
+        
+        <input type="text" id="machineNumber" placeholder="Numéro de machine">
+        <button onclick="verifierMachine()">Vérifier</button>
+        <button onclick="listeClientMajeur()">Liste inspection client majeur</button>
+        
+        <p id="result"></p>
+        <p id="clientList"></p>
+    </div>
 
     <script>
-        const fileUrlInspection = "inspection1.xlsx";
-        const fileUrlGarantie = "garantie.xlsx";
+        const fileUrlInspection = "https://raw.githubusercontent.com/azizgouia123/ispect/main/inspection1.xlsx";
+        const fileUrlGarantie = "https://raw.githubusercontent.com/azizgouia123/ispect/main/garantie.xlsx";
 
-        async function loadExcelFile(url) {
-            const response = await fetch(url);
-            const data = await response.arrayBuffer();
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            return workbook.Sheets[sheetName];
+        function loadExcelFile(url) {
+            return fetch(url)
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    return workbook.Sheets[workbook.SheetNames[0]];
+                });
         }
 
         function verifierMachine() {
-            const machineNumber = document.getElementById("machineNumber").value.trim().toUpperCase();
-            if (!machineNumber) {
+            const machineNumberInput = document.getElementById("machineNumber").value.trim().toUpperCase();
+            if (!machineNumberInput) {
                 alert("Veuillez entrer un numéro de machine.");
                 return;
             }
@@ -65,21 +136,18 @@
             ]).then(([inspectionSheet, garantieSheet]) => {
                 const rangeInspection = XLSX.utils.decode_range(inspectionSheet['!ref']);
                 const rangeGarantie = XLSX.utils.decode_range(garantieSheet['!ref']);
-                let inspections = {
-                    periodique: false,
-                    annuelle: false
-                };
+                let inspections = { periodique: false, annuelle: false };
                 let sousGarantie = false;
 
                 for (let row = rangeInspection.s.r + 1; row <= rangeInspection.e.r; row++) {
                     const machineCell = inspectionSheet[XLSX.utils.encode_cell({r: row, c: 0})];
                     const inspectionCell = inspectionSheet[XLSX.utils.encode_cell({r: row, c: 1})];
-
-                    if (machineCell && machineCell.v.toString().toUpperCase() === machineNumber) {
-                        if (inspectionCell && inspectionCell.v.toLowerCase().includes("périodique")) {
+                    
+                    if (machineCell && machineCell.v.toString().toUpperCase() === machineNumberInput) {
+                        if (inspectionCell && inspectionCell.v.includes("périodique")) {
                             inspections.periodique = true;
                         }
-                        if (inspectionCell && inspectionCell.v.toLowerCase().includes("annuelle")) {
+                        if (inspectionCell && inspectionCell.v.includes("Annuelle")) {
                             inspections.annuelle = true;
                         }
                     }
@@ -87,61 +155,51 @@
 
                 for (let row = rangeGarantie.s.r + 1; row <= rangeGarantie.e.r; row++) {
                     const machineCell = garantieSheet[XLSX.utils.encode_cell({r: row, c: 0})];
-                    if (machineCell && machineCell.v.toString().toUpperCase() === machineNumber) {
+                    if (machineCell && machineCell.v.toString().toUpperCase() === machineNumberInput) {
                         sousGarantie = true;
                     }
                 }
 
-                let resultText = `<div><strong>Machine : ${machineNumber}</strong></div>`;
+                let resultText = `Vérification pour la machine ${machineNumberInput}:\n`;
                 if (inspections.periodique || inspections.annuelle) {
-                    resultText += `<div class="inspection">Type d'inspection :</div>`;
-                    if (inspections.periodique) {
-                        resultText += `- Inspection sécurité périodique<br>`;
-                    }
-                    if (inspections.annuelle) {
-                        resultText += `- Inspection sécurité annuelle<br>`;
-                    }
+                    resultText += `<span class="inspection-type">Type d'inspection à faire:</span>\n`;
+                    if (inspections.periodique) resultText += `- Inspection sécurité périodique\n`;
+                    if (inspections.annuelle) resultText += `- Inspection sécurité Annuelle\n`;
                 } else {
-                    resultText += `Aucune inspection requise pour cette machine.<br>`;
+                    resultText += `Aucune inspection requise pour cette machine.\n`;
                 }
-
-                resultText += `<div class="garantie">Sous garantie : ${sousGarantie ? "Oui" : "Non"}</div>`;
-                document.getElementById("result").innerHTML = resultText;
-            }).catch(error => {
-                console.error("Erreur de chargement des fichiers :", error);
-                document.getElementById("result").textContent = "Erreur lors du chargement.";
-            });
-        }
-
-        function listerMachinesClient() {
-            const clientTarget = "x"; // Le client qu'on veut filtrer
-            loadExcelFile(fileUrlInspection).then(sheet => {
-                const range = XLSX.utils.decode_range(sheet['!ref']);
-                let machines = [];
-
-                for (let row = range.s.r + 1; row <= range.e.r; row++) {
-                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})];
-                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})];
-                    const clientCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})];
-
-                    if (clientCell && clientCell.v.toString().trim().toLowerCase() === clientTarget) {
-                        const machine = machineCell ? machineCell.v : "Inconnu";
-                        const typeInspection = inspectionCell ? inspectionCell.v : "Non spécifiée";
-                        machines.push(`${machine} : ${typeInspection}`);
-                    }
-                }
-
-                let resultText = `<div><strong>Machines du client "${clientTarget}" :</strong></div>`;
-                if (machines.length > 0) {
-                    resultText += machines.join("<br>");
-                } else {
-                    resultText += "Aucune machine trouvée.";
-                }
+                resultText += `<span class="garantie">Sous garantie: ${sousGarantie ? "Oui" : "Non"}</span>`;
 
                 document.getElementById("result").innerHTML = resultText;
             }).catch(error => {
                 console.error("Erreur :", error);
-                document.getElementById("result").textContent = "Erreur lors du chargement.";
+                document.getElementById("result").textContent = "Erreur lors du chargement des fichiers.";
+            });
+        }
+
+        function listeClientMajeur() {
+            loadExcelFile(fileUrlInspection).then(sheet => {
+                const range = XLSX.utils.decode_range(sheet['!ref']);
+                let machinesClientX = [];
+
+                for (let row = range.s.r + 1; row <= range.e.r; row++) {
+                    const machineCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})];
+                    const inspectionCell = sheet[XLSX.utils.encode_cell({r: row, c: 1})];
+                    const clientCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // colonne C
+
+                    if (clientCell && clientCell.v.toLowerCase() === 'x') {
+                        let type = inspectionCell ? inspectionCell.v : "Non spécifiée";
+                        machinesClientX.push(`Machine ${machineCell.v} : ${type}`);
+                    }
+                }
+
+                document.getElementById("clientList").innerHTML = 
+                    machinesClientX.length ? 
+                    "Liste des machines du client X avec inspection :\n" + machinesClientX.join("\n") : 
+                    "Aucune machine trouvée pour le client X.";
+            }).catch(error => {
+                console.error("Erreur :", error);
+                document.getElementById("clientList").textContent = "Erreur lors de la lecture du fichier.";
             });
         }
     </script>
