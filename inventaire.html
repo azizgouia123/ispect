@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventaire des Pièces</title>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .legend {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+    }
+    .vert {
+      background-color: #d4edda;
+    }
+    .rouge {
+      background-color: #f8d7da;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+      position: sticky;
+      top: 0;
+    }
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    select {
+      padding: 8px 12px;
+      min-width: 200px;
+    }
+    button {
+      padding: 8px 12px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .loading {
+      color: #666;
+      font-style: italic;
+      padding: 20px;
+      text-align: center;
+    }
+    tr.vert td {
+      background-color: #d4edda;
+    }
+    tr.rouge td {
+      background-color: #f8d7da;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Inventaire des Pièces</h2>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color vert"></div>
+        <div>Pièces recommandées disponibles dans votre camion</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color rouge"></div>
+        <div>Pièces recommandées non disponibles dans votre camion</div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: white; border: 1px solid #ddd;"></div>
+        <div>Pièces non recommandées pour votre camion</div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <select id="sheetSelect" disabled>
+        <option value="">Chargement de l'inventaire...</option>
+      </select>
+      <button id="loadBtn">Charger l'inventaire</button>
+    </div>
+    
+    <div id="output" class="loading">Sélectionnez une feuille à afficher</div>
+  </div>
+
+  <script>
+    const EXCEL_URL = "https://raw.githubusercontent.com/azizgouia123/ispect/main/N.csv.xlsm";
+    const COLOR_COLUMN = 7; // Colonne H (0-based index)
+    const LAST_COLUMN = 5; // Colonne F (0-based index)
+    let workbook;
+
+    document.getElementById('loadBtn').addEventListener('click', loadExcel);
+
+    async function loadExcel() {
+      const output = document.getElementById('output');
+      const sheetSelect = document.getElementById('sheetSelect');
+      
+      output.innerHTML = '<div class="loading">Chargement de l\'inventaire en cours...</div>';
+      sheetSelect.innerHTML = '<option value="">Chargement...</option>';
+      
+      try {
+        const response = await fetch(EXCEL_URL);
+        const data = await response.arrayBuffer();
+        workbook = XLSX.read(data, { type: 'array' });
+        
+        // Remplir le menu déroulant des feuilles
+        sheetSelect.innerHTML = workbook.SheetNames.map(name => 
+          `<option value="${name}">${name}</option>`
+        ).join('');
+        sheetSelect.disabled = false;
+        
+        // Afficher la première feuille par défaut
+        if (workbook.SheetNames.length > 0) {
+          displaySheet(workbook.SheetNames[0]);
+        }
+        
+      } catch (error) {
+        output.innerHTML = `<div class="error">Erreur lors du chargement: ${error.message}</div>`;
+        console.error(error);
+      }
+    }
+
+    function displaySheet(sheetName) {
+      const output = document.getElementById('output');
+      const sheet = workbook.Sheets[sheetName];
+      
+      if (!sheet || !sheet['!ref']) {
+        output.innerHTML = "<div class='error'>Aucune donnée disponible dans cette feuille</div>";
+        return;
+      }
+
+      output.innerHTML = '<div class="loading">Préparation de l\'affichage...</div>';
+      
+      setTimeout(() => {
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        let html = '<table>';
+
+        // En-têtes (jusqu'à la colonne F)
+        html += '<tr>';
+        for (let c = 0; c <= LAST_COLUMN; c++) {
+          const headerCell = XLSX.utils.encode_cell({ r: range.s.r, c });
+          const cell = sheet[headerCell];
+          html += `<th>${cell ? cell.v : ''}</th>`;
+        }
+        html += '</tr>';
+
+        // Données
+        for (let r = range.s.r + 1; r <= range.e.r; r++) {
+          // Récupérer la couleur de la colonne H
+          const colorCell = sheet[XLSX.utils.encode_cell({ r, c: COLOR_COLUMN })];
+          const colorClass = colorCell ? (colorCell.v === 'V' ? 'vert' : colorCell.v === 'R' ? 'rouge' : '') : '';
+          
+          html += `<tr class="${colorClass}">`;
+          
+          // Afficher jusqu'à la colonne F
+          for (let c = 0; c <= LAST_COLUMN; c++) {
+            const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+            html += `<td>${cell ? (cell.w || cell.v || '') : ''}</td>`;
+          }
+          
+          html += '</tr>';
+        }
+
+        html += '</table>';
+        output.innerHTML = html;
+      }, 100);
+      
+      // Écouteur pour changer de feuille
+      document.getElementById('sheetSelect').addEventListener('change', (e) => {
+        if (e.target.value) {
+          displaySheet(e.target.value);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
