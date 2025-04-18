@@ -167,8 +167,16 @@
         output.innerHTML = '<div class="loading">Chargement des données en cours...</div>';
         
         const response = await fetch(EXCEL_URL);
+        if (!response.ok) throw new Error("Erreur de téléchargement");
         const data = await response.arrayBuffer();
-        workbook = XLSX.read(data, { type: 'array' });
+        
+        // Lire avec toutes les options nécessaires
+        workbook = XLSX.read(data, { 
+          type: 'array',
+          cellStyles: true,
+          sheetStubs: true,
+          cellHTML: true
+        });
         
         // Remplir le menu déroulant avec les noms des camions (feuilles)
         truckSelect.innerHTML = '<option value="">Sélectionnez votre camion</option>' + 
@@ -179,8 +187,8 @@
         output.innerHTML = '<div class="loading">Sélectionnez un camion pour afficher son inventaire</div>';
         
       } catch (error) {
-        output.innerHTML = '<div class="error">Erreur lors du chargement des données des camions</div>';
-        console.error(error);
+        console.error("Erreur:", error);
+        output.innerHTML = '<div class="error">Erreur lors du chargement des données. Veuillez réessayer.</div>';
       }
       
       // Écouter les changements de sélection
@@ -197,46 +205,60 @@
       const output = document.getElementById('output');
       const sheet = workbook.Sheets[sheetName];
       
-      if (!sheet || !sheet['!ref']) {
-        output.innerHTML = '<div class="error">Aucun inventaire disponible pour ce camion</div>';
+      if (!sheet) {
+        output.innerHTML = '<div class="error">Données non disponibles pour ce camion</div>';
+        return;
+      }
+
+      // Vérifier si la feuille a des données
+      if (!sheet['!ref'] || !sheet['!rows'] || !sheet['!cols']) {
+        output.innerHTML = '<div class="error">Format de données non supporté pour ce camion</div>';
         return;
       }
 
       output.innerHTML = '<div class="loading">Préparation de l\'inventaire...</div>';
       
-      // Petit délai pour permettre l'affichage du message
       setTimeout(() => {
-        const range = XLSX.utils.decode_range(sheet['!ref']);
-        let html = '<div class="inventory-container"><table>';
+        try {
+          const range = XLSX.utils.decode_range(sheet['!ref']);
+          let html = '<div class="inventory-container"><table>';
 
-        // En-têtes (jusqu'à la colonne F)
-        html += '<tr>';
-        for (let c = 0; c <= LAST_COLUMN; c++) {
-          const headerCell = XLSX.utils.encode_cell({ r: range.s.r, c });
-          const cell = sheet[headerCell];
-          html += `<th>${cell ? cell.v : ''}</th>`;
-        }
-        html += '</tr>';
-
-        // Données
-        for (let r = range.s.r + 1; r <= range.e.r; r++) {
-          // Récupérer la couleur de la colonne H
-          const colorCell = sheet[XLSX.utils.encode_cell({ r, c: COLOR_COLUMN })];
-          const colorClass = colorCell ? (colorCell.v === 'V' ? 'vert' : colorCell.v === 'R' ? 'rouge' : '') : '';
-          
-          html += `<tr class="${colorClass}">`;
-          
-          // Afficher jusqu'à la colonne F
+          // En-têtes (jusqu'à la colonne F)
+          html += '<tr>';
           for (let c = 0; c <= LAST_COLUMN; c++) {
-            const cell = sheet[XLSX.utils.encode_cell({ r, c })];
-            html += `<td>${cell ? (cell.w || cell.v || '') : ''}</td>`;
+            const headerCell = XLSX.utils.encode_cell({ r: range.s.r, c });
+            const cell = sheet[headerCell];
+            const headerText = cell ? (cell.w || cell.v || '') : '';
+            html += `<th>${headerText}</th>`;
           }
-          
           html += '</tr>';
-        }
 
-        html += '</table></div>';
-        output.innerHTML = html;
+          // Données
+          for (let r = range.s.r + 1; r <= range.e.r; r++) {
+            // Récupérer la couleur de la colonne H
+            const colorCell = sheet[XLSX.utils.encode_cell({ r, c: COLOR_COLUMN })];
+            const colorValue = colorCell ? (colorCell.v || '').toString().trim() : '';
+            const colorClass = colorValue === 'V' ? 'vert' : colorValue === 'R' ? 'rouge' : '';
+            
+            html += `<tr class="${colorClass}">`;
+            
+            // Afficher jusqu'à la colonne F
+            for (let c = 0; c <= LAST_COLUMN; c++) {
+              const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+              const cellValue = cell ? (cell.w || cell.v || '') : '';
+              html += `<td>${cellValue}</td>`;
+            }
+            
+            html += '</tr>';
+          }
+
+          html += '</table></div>';
+          output.innerHTML = html;
+
+        } catch (error) {
+          console.error("Erreur d'affichage:", error);
+          output.innerHTML = '<div class="error">Erreur d\'affichage des données. Format non supporté.</div>';
+        }
       }, 50);
     }
   </script>
