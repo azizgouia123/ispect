@@ -9,6 +9,7 @@
     * {
       box-sizing: border-box;
     }
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -16,20 +17,23 @@
       background: #f5f5f5;
       font-size: 14px;
     }
+
     .container {
       max-width: 100%;
       margin: 0 auto;
       background: white;
       padding: 15px;
       border-radius: 8px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
     }
+
     h2 {
       font-size: 18px;
       margin-top: 0;
       color: #333;
       text-align: center;
     }
+
     .legend {
       background: #f8f9fa;
       padding: 10px;
@@ -39,26 +43,32 @@
       grid-template-columns: 1fr;
       gap: 8px;
     }
+
     .legend-item {
       display: flex;
       align-items: center;
       gap: 8px;
     }
+
     .legend-color {
       width: 16px;
       height: 16px;
       border-radius: 3px;
       flex-shrink: 0;
     }
+
     .vert {
       background-color: #d4edda;
     }
+
     .rouge {
       background-color: #f8d7da;
     }
+
     .controls {
       margin-bottom: 15px;
     }
+
     select {
       width: 100%;
       padding: 10px;
@@ -67,55 +77,67 @@
       font-size: 16px;
       background-color: white;
     }
+
     .loading {
       color: #666;
       font-style: italic;
       padding: 20px;
       text-align: center;
     }
+
     .error {
       color: #d32f2f;
       padding: 15px;
       text-align: center;
       font-weight: bold;
     }
+
     .inventory-container {
       overflow-x: auto;
       margin-top: 15px;
       background: white;
       border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 12px;
     }
-    th, td {
+
+    th,
+    td {
       border: 1px solid #ddd;
       padding: 8px 10px;
       text-align: left;
     }
+
     th {
       background-color: #f2f2f2;
       position: sticky;
       top: 0;
       font-weight: bold;
     }
+
     tr.vert td {
       background-color: #d4edda;
     }
+
     tr.rouge td {
       background-color: #f8d7da;
     }
+
     @media (min-width: 600px) {
       body {
         padding: 20px;
       }
+
       .container {
         max-width: 800px;
         padding: 20px;
       }
+
       table {
         font-size: 14px;
       }
@@ -125,7 +147,7 @@
 <body>
   <div class="container">
     <h2>Inventaire des Camions</h2>
-    
+
     <div class="legend">
       <div class="legend-item">
         <div class="legend-color vert"></div>
@@ -140,13 +162,13 @@
         <div>Pièces non recommandées</div>
       </div>
     </div>
-    
+
     <div class="controls">
       <select id="truckSelect">
         <option value="">Sélectionnez votre camion</option>
       </select>
     </div>
-    
+
     <div id="output">
       <div class="loading">Chargement des données des camions...</div>
     </div>
@@ -162,35 +184,35 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const output = document.getElementById('output');
       const truckSelect = document.getElementById('truckSelect');
-      
+
       try {
         output.innerHTML = '<div class="loading">Chargement des données en cours...</div>';
-        
+
         const response = await fetch(EXCEL_URL);
         if (!response.ok) throw new Error("Erreur de téléchargement");
         const data = await response.arrayBuffer();
-        
+
         // Lire avec toutes les options nécessaires
-        workbook = XLSX.read(data, { 
+        workbook = XLSX.read(data, {
           type: 'array',
           cellStyles: true,
           sheetStubs: true,
           cellHTML: true
         });
-        
+
         // Remplir le menu déroulant avec les noms des camions (feuilles)
-        truckSelect.innerHTML = '<option value="">Sélectionnez votre camion</option>' + 
-          workbook.SheetNames.map(name => 
+        truckSelect.innerHTML = '<option value="">Sélectionnez votre camion</option>' +
+          workbook.SheetNames.map(name =>
             `<option value="${name}">${name}</option>`
           ).join('');
-        
+
         output.innerHTML = '<div class="loading">Sélectionnez un camion pour afficher son inventaire</div>';
-        
+
       } catch (error) {
         console.error("Erreur:", error);
         output.innerHTML = '<div class="error">Erreur lors du chargement des données. Veuillez réessayer.</div>';
       }
-      
+
       // Écouter les changements de sélection
       truckSelect.addEventListener('change', () => {
         if (truckSelect.value) {
@@ -204,20 +226,24 @@
     function displayTruckInventory(sheetName) {
       const output = document.getElementById('output');
       const sheet = workbook.Sheets[sheetName];
-      
+
+      console.log("Objet 'sheet':", sheet);
+      console.log("sheet['!ref']:", sheet['!ref']);
+      console.log("sheet['!rows']:", sheet['!rows']);
+      console.log("sheet['!cols']:", sheet['!cols']);
+
       if (!sheet) {
         output.innerHTML = '<div class="error">Données non disponibles pour ce camion</div>';
         return;
       }
 
-      // Vérifier si la feuille a des données
-      if (!sheet['!ref'] || !sheet['!rows'] || !sheet['!cols']) {
+      if (!sheet['!ref']) { // On vérifie juste !ref pour l'instant
         output.innerHTML = '<div class="error">Format de données non supporté pour ce camion</div>';
         return;
       }
 
       output.innerHTML = '<div class="loading">Préparation de l\'inventaire...</div>';
-      
+
       setTimeout(() => {
         try {
           const range = XLSX.utils.decode_range(sheet['!ref']);
@@ -235,20 +261,21 @@
 
           // Données
           for (let r = range.s.r + 1; r <= range.e.r; r++) {
-            // Récupérer la couleur de la colonne H
+            const rowData = [];
+            for (let c = 0; c <= LAST_COLUMN; c++) {
+              const cell = sheet[XLSX.utils.encode_cell({ r, c })];
+              rowData.push(cell ? (cell.w || cell.v || '') : '');
+            }
+
+            // Récupérer la couleur de la colonne H (index 7)
             const colorCell = sheet[XLSX.utils.encode_cell({ r, c: COLOR_COLUMN })];
             const colorValue = colorCell ? (colorCell.v || '').toString().trim() : '';
             const colorClass = colorValue === 'V' ? 'vert' : colorValue === 'R' ? 'rouge' : '';
-            
+
             html += `<tr class="${colorClass}">`;
-            
-            // Afficher jusqu'à la colonne F
-            for (let c = 0; c <= LAST_COLUMN; c++) {
-              const cell = sheet[XLSX.utils.encode_cell({ r, c })];
-              const cellValue = cell ? (cell.w || cell.v || '') : '';
-              html += `<td>${cellValue}</td>`;
-            }
-            
+            rowData.forEach(value => {
+              html += `<td>${value}</td>`;
+            });
             html += '</tr>';
           }
 
