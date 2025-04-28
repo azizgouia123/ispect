@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Réquisition de Pièces</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        /* Reset et styles de base */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -18,155 +15,110 @@
         
         body {
             font-family: Arial, sans-serif;
+            padding: 15px;
             background: #f8f8f8;
-            padding: 10px;
-            color: #000;
-            font-size: 14px;
-            line-height: 1.4;
-            -webkit-text-size-adjust: 100%;
         }
         
         .container {
-            background: #fff;
-            padding: 12px;
+            background: white;
+            padding: 20px;
             border-radius: 8px;
-            max-width: 100%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
             margin: 0 auto;
-            box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            overflow-x: auto;
         }
-
-        /* Aide mobile */
-        .mobile-help {
-            display: none;
-            background: #ffeb3b;
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        /* En-tête responsive */
+        
         .header {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
-        .header-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-        
-        .header-left, .header-right {
-            width: 100%;
-            text-align: center;
-            margin-bottom: 8px;
+        .logo {
+            height: 70px;
         }
         
         h1 {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             text-align: center;
-            width: 100%;
-            margin: 8px 0;
+            flex-grow: 1;
+            margin: 0 20px;
         }
-
-        /* Logo */
-        .logo {
-            height: 50px;
-            width: auto;
-            max-width: 150px;
-            object-fit: contain;
+        
+        .doc-number {
+            display: flex;
+            align-items: center;
         }
-
-        /* Formulaire */
+        
         .form-group {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 5px;
         }
         
         .checkboxes {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            font-size: 0.8rem;
-            margin-top: 5px;
+            gap: 10px;
+            margin-top: 10px;
         }
         
         .checkboxes label {
-            white-space: nowrap;
             display: flex;
             align-items: center;
+            font-weight: normal;
+            margin-bottom: 0;
         }
         
-        input[type="text"],
-        input[type="number"],
-        input[type="date"],
-        textarea,
-        select {
-            border: 1px solid #a6c9ff;
-            background-color: #e0f2ff;
-            padding: 6px 8px;
-            border-radius: 4px;
-            width: 100%;
-            font-size: 0.9rem;
-        }
-        
-        input[type="checkbox"], 
-        input[type="radio"] {
-            width: auto;
-            margin-right: 5px;
-        }
-
-        /* Tableau responsive */
         .table-wrapper {
-            width: 100%;
             overflow-x: auto;
-            margin-top: 12px;
-            -webkit-overflow-scrolling: touch;
+            margin: 20px 0;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.75rem;
-            min-width: 800px;
+            min-width: 1000px;
         }
         
         th, td {
-            border: 1px solid #ccc;
-            padding: 6px;
+            border: 1px solid #ddd;
+            padding: 8px;
             text-align: center;
-            vertical-align: middle;
-            white-space: normal !important;
-            word-wrap: break-word !important;
         }
         
         th {
-            background: #e6edff;
-            font-weight: bold;
+            background-color: #f2f2f2;
         }
-
-        /* Zones de texte */
-        .comments {
-            width: 100%;
-            height: 80px;
-            margin-top: 12px;
-            resize: vertical;
+        
+        .table-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
         }
-
-        /* Boutons */
-        .btn {
-            padding: 8px 12px;
-            color: white;
+        
+        button {
+            padding: 10px 15px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.8rem;
-            margin: 3px;
-            white-space: nowrap;
+            color: white;
+            font-weight: bold;
         }
         
         .btn-add {
@@ -181,227 +133,69 @@
             background-color: #2196F3;
         }
         
-        .table-controls {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        /* Signatures */
         .signatures {
             display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 15px;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
         
         .signature-block {
             flex: 1;
-            min-width: 100%;
+            min-width: 200px;
         }
         
-        .signature-block select {
-            margin-top: 5px;
-        }
-
-        /* Légende */
-        .legend {
-            font-size: 0.8rem;
-            margin-top: 12px;
-            padding: 8px;
-            background-color: #f0f0f0;
-            border: 1px solid #000;
-            border-radius: 5px;
-        }
-
-        /* Messages d'erreur */
         .error-message {
             color: red;
-            font-size: 0.7rem;
-            margin-top: 3px;
+            font-size: 0.8rem;
             display: none;
         }
-
-        /* Éléments spécifiques */
-        .item-number {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
         
-        .description-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .piece-options {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .delete-row {
-            color: #f44336;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-
-        /* Styles pour le PDF */
         .pdf-text {
-            padding: 4px;
-            min-height: 20px;
             white-space: normal !important;
             word-wrap: break-word !important;
-            width: 100%;
-            display: block;
         }
-
-        /* Media Queries pour mobile */
-        @media (max-width: 767px) {
-            .mobile-help {
-                display: block;
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
             }
             
-            table {
-                font-size: 0.65rem;
-            }
-            
-            th, td {
-                padding: 4px;
-            }
-            
-            input[type="text"],
-            input[type="number"],
-            input[type="date"],
-            textarea,
-            select {
-                font-size: 0.7rem;
-                padding: 4px;
-            }
-            
-            .btn {
-                padding: 6px 8px;
-                font-size: 0.7rem;
-            }
-            
-            .item-number, .piece-options {
-                flex-direction: row;
-                flex-wrap: wrap;
+            .doc-number {
+                margin-top: 10px;
                 justify-content: center;
             }
             
-            .header-left, .header-right {
-                text-align: center;
-            }
-        }
-
-        /* Media Queries pour desktop */
-        @media (min-width: 768px) {
-            body {
-                padding: 15px;
-                font-size: 16px;
-            }
-            
-            .container {
-                padding: 15px;
-                max-width: 1200px;
-            }
-            
-            .header {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            .header-container {
-                flex-direction: row;
-                align-items: center;
-            }
-            
-            .header-left, .header-right {
-                width: auto;
-                text-align: left;
-                margin-bottom: 0;
-            }
-            
-            .header-right {
-                text-align: right;
-            }
-            
             h1 {
-                font-size: 1.5rem;
-                margin: 0 15px;
-            }
-            
-            .logo {
-                height: 70px;
-                max-width: 200px;
-            }
-            
-            table {
-                font-size: 0.85rem;
-                min-width: 100%;
-            }
-            
-            th, td {
-                padding: 8px;
-            }
-            
-            .btn {
-                padding: 8px 15px;
-                font-size: 0.85rem;
-            }
-            
-            .signatures {
-                flex-direction: row;
-            }
-            
-            .signature-block {
-                min-width: 200px;
-            }
-            
-            .table-wrapper {
-                overflow-x: visible;
+                margin: 10px 0;
             }
         }
     </style>
 </head>
 <body>
-    <div class="mobile-help">
-        <strong>Conseil :</strong> Faites défiler horizontalement pour voir tout le tableau.
-    </div>
-
     <div class="container" id="pdf-content">
         <div class="header">
-            <div class="header-container">
-                <div class="header-left">
-                    <img src="logo.png" class="logo" alt="Logo entreprise" crossorigin="anonymous">
-                </div>
-                <h1>RÉQUISITION DE PIÈCES</h1>
-                <div class="header-right">
-                    <strong>N°</strong> <input type="text" id="doc-number" style="width: 100px;" required>
-                    <div class="error-message" id="doc-number-error">Ce champ est obligatoire</div>
-                </div>
+            <img src="logo.png" class="logo" alt="Logo" crossorigin="anonymous">
+            <h1>RÉQUISITION DE PIÈCES</h1>
+            <div class="doc-number">
+                <strong>N°</strong> 
+                <input type="text" id="doc-number" style="width: 100px; margin-left: 5px;" required>
+                <div class="error-message" id="doc-number-error">Ce champ est obligatoire</div>
             </div>
         </div>
 
         <div class="form-group">
             <strong>VOTRE ATELIER :</strong>
             <div class="checkboxes" id="workshop-checkboxes">
-                <!-- Les cases seront générées par JavaScript -->
+                <!-- Ateliers seront ajoutés par JS -->
             </div>
             <div class="error-message" id="workshop-error">Veuillez sélectionner un atelier</div>
         </div>
 
         <div class="form-group">
-            <label><strong>N° camion:</strong></label> 
-            <input type="text" id="truck-number" style="width: 150px;" required>
+            <label for="truck-number"><strong>N° camion:</strong></label>
+            <input type="text" id="truck-number" required>
             <div class="error-message" id="truck-number-error">Ce champ est obligatoire</div>
         </div>
 
@@ -411,70 +205,55 @@
                     <tr>
                         <th style="min-width: 120px;">N° ITEM</th>
                         <th style="min-width: 200px;">DESCRIPTION</th>
-                        <th style="width: 60px;">QTÉ</th>
-                        <th style="width: 80px;">N° UNITÉ</th>
-                        <th style="width: 80px;">MODÈLE</th>
-                        <th style="width: 100px;">N° BON DE TRAVAIL WYNNE</th>
-                        <th style="width: 70px;">PIÈCE</th>
-                        <th style="width: 90px;">URGENCE</th>
-                        <th style="width: 110px;">DATE DE LA COMMANDE</th>
-                        <th style="width: 30px;"></th>
+                        <th>QTÉ</th>
+                        <th>N° UNITÉ</th>
+                        <th>MODÈLE</th>
+                        <th>N° BON DE TRAVAIL</th>
+                        <th>PIÈCE</th>
+                        <th>URGENCE</th>
+                        <th>DATE COMMANDE</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td>
-                            <div class="item-number">
-                                <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
-                                <div class="error-message">Ce champ est obligatoire</div>
-                                <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
-                            </div>
+                            <input type="text" class="item-input" required>
+                            <div class="error-message">Ce champ est obligatoire</div>
+                            <label style="font-weight: normal;">
+                                <input type="checkbox" class="warranty-checkbox"> Garantie
+                            </label>
                         </td>
                         <td>
-                            <div class="description-container">
-                                <input type="text" class="description-input" placeholder="Description" required>
-                                <div class="error-message">Ce champ est obligatoire</div>
-                                <input type="text" class="description-input" placeholder="Fournisseur" required>
-                                <div class="error-message">Ce champ est obligatoire</div>
-                            </div>
-                        </td>
-                        <td>
-                            <input type="number" class="quantity-input" required>
+                            <input type="text" class="description-input" placeholder="Description" required>
+                            <div class="error-message">Ce champ est obligatoire</div>
+                            <input type="text" class="supplier-input" placeholder="Fournisseur" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
+                        <td><input type="number" class="quantity-input" required></td>
+                        <td><input type="text" class="unit-input" required></td>
+                        <td><input type="text" class="model-input" required></td>
+                        <td><input type="text" class="work-order-input" required></td>
                         <td>
-                            <input type="text" class="unit-input" required>
-                            <div class="error-message">Ce champ est obligatoire</div>
-                        </td>
-                        <td>
-                            <input type="text" class="model-input" required>
-                            <div class="error-message">Ce champ est obligatoire</div>
-                        </td>
-                        <td>
-                            <input type="text" class="work-order-input" required>
-                            <div class="error-message">Ce champ est obligatoire</div>
-                        </td>
-                        <td>
-                            <div class="piece-options">
-                                <label><input type="radio" class="piece-c" name="piece0" required> C</label>
-                                <label><input type="radio" class="piece-t" name="piece0" required> T</label>
-                                <div class="error-message">Veuillez sélectionner une option</div>
+                            <div style="display: flex; flex-direction: column; gap: 5px;">
+                                <label style="font-weight: normal;">
+                                    <input type="radio" name="piece0" class="piece-c" required> C
+                                </label>
+                                <label style="font-weight: normal;">
+                                    <input type="radio" name="piece0" class="piece-t" required> T
+                                </label>
                             </div>
                         </td>
                         <td>
                             <select class="urgency-select" required>
-                                <option value="" disabled selected>Sélectionner</option>
+                                <option value="" disabled selected>Choisir</option>
                                 <option value="1">1 (1 jour)</option>
                                 <option value="2">2 (3-5 jours)</option>
                                 <option value="3">3 (5-10 jours)</option>
                             </select>
-                            <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td>
-                            <input type="date" class="order-date" required>
-                            <div class="error-message">Ce champ est obligatoire</div>
-                        </td>
-                        <td><span class="delete-row" onclick="removeRow(this)">×</span></td>
+                        <td><input type="date" class="order-date" required></td>
+                        <td><button onclick="removeRow(this)" style="background: red; padding: 5px;">×</button></td>
                     </tr>
                 </tbody>
             </table>
@@ -488,50 +267,30 @@
 
         <div class="form-group">
             <label for="comments"><strong>COMMENTAIRES :</strong></label>
-            <textarea id="comments" class="comments"></textarea>
-        </div>
-
-        <div class="legend">
-            <strong>LÉGENDE</strong><br>
-            Pièce : C = En commande | T = En tablette<br>
-            Urgence : 1 = 1 jour, 2 = 3 à 5 jours, 3 = 5 à 10 jours
+            <textarea id="comments" rows="4"></textarea>
         </div>
 
         <div class="signatures">
             <div class="signature-block">
-                Signature du superviseur
+                <label>Signature du superviseur</label>
                 <select class="supervisor-signature" required>
                     <option value="" disabled selected>Sélectionner</option>
                     <option value="Abdelaziz Gouia">Abdelaziz Gouia</option>
                     <option value="Jean-Pierre Laperle">Jean-Pierre Laperle</option>
                 </select>
-                <div class="error-message">Ce champ est obligatoire</div>
             </div>
             <div class="signature-block">
-                Signature du technicien
+                <label>Signature du technicien</label>
                 <select class="technician-signature" required>
                     <option value="" disabled selected>Sélectionner</option>
                     <option value="Dominic Vallée">Dominic Vallée</option>
                     <option value="Raphael Bouchard">Raphael Bouchard</option>
-                    <option value="Christopher's Rivas">Christopher's Rivas</option>
-                    <option value="Benoit Corneau">Benoit Corneau</option>
-                    <option value="Marc-André Moreau">Marc-André Moreau</option>
-                    <option value="Roger Leclair">Roger Leclair</option>
-                    <option value="Pierre-Luc Carmel">Pierre-Luc Carmel</option>
-                    <option value="Robert Langlois">Robert Langlois</option>
-                    <option value="Benjamin Couture">Benjamin Couture</option>
-                    <option value="Éric Rabouin">Éric Rabouin</option>
-                    <option value="Guillaume Marcoux">Guillaume Marcoux</option>
-                    <option value="Karim Mammouche">Karim Mammouche</option>
-                    <option value="Sébastien Cloutier">Sébastien Cloutier</option>
-                    <option value="Yassine Sakhraji">Yassine Sakhraji</option>
-                    <option value="Soufiane Hamil">Soufiane Hamil</option>
-                    <option value="Sérigne Mansour Diagne">Énergie - Sérigne Mansour Diagne</option>
+                    <!-- Autres options -->
                 </select>
-                <div class="error-message">Ce champ est obligatoire</div>
             </div>
             <div class="signature-block">
-                Date <input type="date" id="document-date">
+                <label>Date</label>
+                <input type="date" id="document-date">
             </div>
         </div>
     </div>
@@ -548,127 +307,93 @@
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', function() {
-            // Remplir les ateliers (radio buttons)
-            const checkboxesContainer = document.getElementById('workshop-checkboxes');
-            workshops.forEach((workshop, index) => {
+            // Remplir les ateliers
+            const container = document.getElementById('workshop-checkboxes');
+            workshops.forEach(workshop => {
                 const label = document.createElement('label');
-                label.innerHTML = `<input type="radio" name="workshop" class="workshop-radio" value="${workshop}" ${index === 0 ? 'required' : ''}> ${workshop}`;
-                checkboxesContainer.appendChild(label);
+                label.innerHTML = `<input type="radio" name="workshop" value="${workshop}"> ${workshop}`;
+                container.appendChild(label);
             });
-            
-            // Définir la date du jour pour le document et les commandes
+
+            // Définir la date du jour
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('document-date').value = today;
-            
-            // Définir la date de commande sur la première ligne
-            const firstRowDate = document.querySelector('.order-date');
-            if (firstRowDate) {
-                firstRowDate.value = today;
-            }
-            
-            // Synchroniser N° de réquisition et N° de bon de travail
-            const docNumberInput = document.getElementById('doc-number');
-            docNumberInput.addEventListener('input', function() {
-                const workOrderInputs = document.querySelectorAll('.work-order-input');
-                workOrderInputs.forEach(input => {
+            document.querySelector('.order-date').value = today;
+
+            // Synchroniser N° doc et N° bon de travail
+            document.getElementById('doc-number').addEventListener('input', function() {
+                document.querySelectorAll('.work-order-input').forEach(input => {
                     input.value = this.value;
                 });
             });
-
-            // Initialiser le N° de bon de travail avec la valeur du N° de réquisition
-            if (docNumberInput.value) {
-                const workOrderInputs = document.querySelectorAll('.work-order-input');
-                workOrderInputs.forEach(input => {
-                    input.value = docNumberInput.value;
-                });
-            }
         });
 
         // Ajouter une ligne
         function addRow() {
             const tbody = document.querySelector('#partsTable tbody');
             const newRow = document.createElement('tr');
-            const today = new Date().toISOString().split('T')[0];
-            const docNumber = document.getElementById('doc-number').value;
             const rowId = Date.now();
-            
+            const today = new Date().toISOString().split('T')[0];
+            const docNumber = document.getElementById('doc-number').value || '';
+
             newRow.innerHTML = `
                 <td>
-                    <div class="item-number">
-                        <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
-                        <div class="error-message">Ce champ est obligatoire</div>
-                        <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
-                    </div>
+                    <input type="text" class="item-input" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                    <label style="font-weight: normal;">
+                        <input type="checkbox" class="warranty-checkbox"> Garantie
+                    </label>
                 </td>
                 <td>
-                    <div class="description-container">
-                        <input type="text" class="description-input" placeholder="Description" required>
-                        <div class="error-message">Ce champ est obligatoire</div>
-                        <input type="text" class="description-input" placeholder="Fournisseur" required>
-                        <div class="error-message">Ce champ est obligatoire</div>
-                    </div>
-                </td>
-                <td>
-                    <input type="number" class="quantity-input" required>
+                    <input type="text" class="description-input" placeholder="Description" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                    <input type="text" class="supplier-input" placeholder="Fournisseur" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
+                <td><input type="number" class="quantity-input" required></td>
+                <td><input type="text" class="unit-input" required></td>
+                <td><input type="text" class="model-input" required></td>
+                <td><input type="text" class="work-order-input" value="${docNumber}" required></td>
                 <td>
-                    <input type="text" class="unit-input" required>
-                    <div class="error-message">Ce champ est obligatoire</div>
-                </td>
-                <td>
-                    <input type="text" class="model-input" required>
-                    <div class="error-message">Ce champ est obligatoire</div>
-                </td>
-                <td>
-                    <input type="text" class="work-order-input" value="${docNumber || ''}" required>
-                    <div class="error-message">Ce champ est obligatoire</div>
-                </td>
-                <td>
-                    <div class="piece-options">
-                        <label><input type="radio" class="piece-c" name="piece${rowId}" required> C</label>
-                        <label><input type="radio" class="piece-t" name="piece${rowId}" required> T</label>
-                        <div class="error-message">Veuillez sélectionner une option</div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <label style="font-weight: normal;">
+                            <input type="radio" name="piece${rowId}" class="piece-c" required> C
+                        </label>
+                        <label style="font-weight: normal;">
+                            <input type="radio" name="piece${rowId}" class="piece-t" required> T
+                        </label>
                     </div>
                 </td>
                 <td>
                     <select class="urgency-select" required>
-                        <option value="" disabled selected>Sélectionner</option>
+                        <option value="" disabled selected>Choisir</option>
                         <option value="1">1 (1 jour)</option>
                         <option value="2">2 (3-5 jours)</option>
                         <option value="3">3 (5-10 jours)</option>
                     </select>
-                    <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td>
-                    <input type="date" class="order-date" value="${today}" required>
-                    <div class="error-message">Ce champ est obligatoire</div>
-                </td>
-                <td><span class="delete-row" onclick="removeRow(this)">×</span></td>
+                <td><input type="date" class="order-date" value="${today}" required></td>
+                <td><button onclick="removeRow(this)" style="background: red; padding: 5px;">×</button></td>
             `;
-            
+
             tbody.appendChild(newRow);
         }
 
-        // Supprimer la dernière ligne
-        function removeLastRow() {
-            const tbody = document.querySelector('#partsTable tbody');
-            const rows = tbody.querySelectorAll('tr');
-            if (rows.length > 1) {
-                tbody.removeChild(rows[rows.length - 1]);
+        // Supprimer une ligne
+        function removeRow(button) {
+            const row = button.closest('tr');
+            if (document.querySelectorAll('#partsTable tbody tr').length > 1) {
+                row.remove();
             } else {
                 alert("Vous ne pouvez pas supprimer la dernière ligne !");
             }
         }
 
-        // Supprimer une ligne spécifique
-        function removeRow(button) {
-            const row = button.closest('tr');
-            const tbody = document.querySelector('#partsTable tbody');
-            const rows = tbody.querySelectorAll('tr');
-            
+        // Supprimer la dernière ligne
+        function removeLastRow() {
+            const rows = document.querySelectorAll('#partsTable tbody tr');
             if (rows.length > 1) {
-                row.remove();
+                rows[rows.length - 1].remove();
             } else {
                 alert("Vous ne pouvez pas supprimer la dernière ligne !");
             }
@@ -678,158 +403,85 @@
         function validateForm() {
             let isValid = true;
             
-            // Réinitialiser les messages d'erreur
+            // Réinitialiser les erreurs
             document.querySelectorAll('.error-message').forEach(el => {
                 el.style.display = 'none';
             });
 
-            // Valider le numéro de document
-            const docNumber = document.getElementById('doc-number').value.trim();
-            if (!docNumber) {
+            // Valider les champs principaux
+            if (!document.getElementById('doc-number').value) {
                 document.getElementById('doc-number-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Valider exactement un atelier sélectionné
-            const workshopSelected = document.querySelector('.workshop-radio:checked');
-            if (!workshopSelected) {
+            if (!document.querySelector('input[name="workshop"]:checked')) {
                 document.getElementById('workshop-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Valider le numéro de camion
-            if (!document.getElementById('truck-number').value.trim()) {
+            if (!document.getElementById('truck-number').value) {
                 document.getElementById('truck-number-error').style.display = 'block';
                 isValid = false;
             }
 
-            // Valider chaque ligne du tableau
-            const rows = document.querySelectorAll('#partsTable tbody tr');
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const rowNumber = i + 1;
-                
-                // Vérifier tous les champs obligatoires
-                const requiredInputs = row.querySelectorAll('[required]');
-                for (const input of requiredInputs) {
-                    if (input.type === 'radio' || input.type === 'checkbox') {
-                        const groupName = input.name;
-                        const isChecked = row.querySelector(`[name="${groupName}"]:checked`);
-                        if (!isChecked) {
-                            const errorMsg = row.querySelector('.piece-options .error-message');
-                            if (errorMsg) errorMsg.style.display = 'block';
-                            isValid = false;
-                        }
-                    } else if (!input.value && input.type !== 'checkbox') {
-                        const errorMsg = input.nextElementSibling;
-                        if (errorMsg && errorMsg.classList.contains('error-message')) {
-                            errorMsg.style.display = 'block';
-                        }
+            // Valider chaque ligne
+            document.querySelectorAll('#partsTable tbody tr').forEach(row => {
+                const inputs = row.querySelectorAll('[required]');
+                inputs.forEach(input => {
+                    if (!input.value && !(input.type === 'radio' && row.querySelector(`input[name="${input.name}"]:checked`))) {
+                        const errorMsg = input.closest('td').querySelector('.error-message');
+                        if (errorMsg) errorMsg.style.display = 'block';
                         isValid = false;
                     }
-                }
-                
-                // Vérifier que N° de bon de travail = N° de réquisition
-                const workOrderValue = row.querySelector('.work-order-input').value;
-                if (workOrderValue !== docNumber) {
-                    alert(`Ligne ${rowNumber}: Le N° de bon de travail doit être identique au N° de réquisition`);
-                    isValid = false;
-                }
-            }
-
-            // Valider les signatures
-            const supervisorSignature = document.querySelector('.supervisor-signature');
-            if (!supervisorSignature.value) {
-                supervisorSignature.nextElementSibling.style.display = 'block';
-                isValid = false;
-            }
-
-            const technicianSignature = document.querySelector('.technician-signature');
-            if (!technicianSignature.value) {
-                technicianSignature.nextElementSibling.style.display = 'block';
-                isValid = false;
-            }
+                });
+            });
 
             return isValid;
         }
 
-        // Générer le PDF
+        // Générer PDF
         async function generatePDF() {
-            if (!validateForm()) {
-                return;
-            }
+            if (!validateForm()) return;
 
+            const { jsPDF } = window.jspdf;
+            
             try {
-                // Créer un clone du contenu original
-                const originalContent = document.getElementById('pdf-content');
-                const clone = originalContent.cloneNode(true);
+                // Créer un clone pour le PDF
+                const original = document.getElementById('pdf-content');
+                const clone = original.cloneNode(true);
                 clone.style.position = 'absolute';
                 clone.style.left = '-9999px';
-                clone.style.width = originalContent.offsetWidth + 'px';
                 document.body.appendChild(clone);
 
-                // Remplacer les éléments de formulaire par du texte statique
-                clone.querySelectorAll('input, select, textarea').forEach(element => {
+                // Convertir les inputs en texte
+                clone.querySelectorAll('input, select, textarea').forEach(el => {
                     const div = document.createElement('div');
                     div.className = 'pdf-text';
                     
-                    if (element.type === 'checkbox' || element.type === 'radio') {
-                        if (element.checked) {
-                            div.textContent = element.nextElementSibling.textContent;
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        if (el.checked && el.nextElementSibling) {
+                            div.textContent = el.nextElementSibling.textContent;
                         }
-                    } else if (element.tagName === 'SELECT') {
-                        div.textContent = element.options[element.selectedIndex]?.text || '';
+                    } else if (el.tagName === 'SELECT') {
+                        div.textContent = el.options[el.selectedIndex]?.text || '';
                     } else {
-                        div.textContent = element.value;
+                        div.textContent = el.value;
                     }
 
-                    element.parentNode.replaceChild(div, element);
+                    el.parentNode.replaceChild(div, el);
                 });
 
-                // Supprimer les éléments inutiles dans le PDF
-                clone.querySelectorAll('.table-controls, .delete-row, .mobile-help, .error-message').forEach(el => {
-                    el.remove();
-                });
-
-                // Ajustements supplémentaires pour le tableau
-                clone.querySelectorAll('th, td').forEach(cell => {
-                    cell.style.whiteSpace = 'normal';
-                    cell.style.wordWrap = 'break-word';
-                    cell.style.padding = '4px';
-                });
-
-                // Options html2canvas
-                const options = {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#FFFFFF',
-                    logging: true,
-                    allowTaint: true,
-                    scrollX: 0,
-                    scrollY: 0
-                };
-
-                // Afficher un indicateur de chargement
-                const loadingIndicator = document.createElement('div');
-                loadingIndicator.style.position = 'fixed';
-                loadingIndicator.style.top = '50%';
-                loadingIndicator.style.left = '50%';
-                loadingIndicator.style.transform = 'translate(-50%, -50%)';
-                loadingIndicator.style.backgroundColor = 'rgba(0,0,0,0.7)';
-                loadingIndicator.style.color = 'white';
-                loadingIndicator.style.padding = '20px';
-                loadingIndicator.style.borderRadius = '5px';
-                loadingIndicator.style.zIndex = '9999';
-                loadingIndicator.textContent = 'Génération du PDF en cours...';
-                document.body.appendChild(loadingIndicator);
+                // Supprimer les boutons
+                clone.querySelectorAll('.table-controls, button').forEach(el => el.remove());
 
                 // Générer l'image
-                const canvas = await html2canvas(clone, options);
-                document.body.removeChild(clone);
-                document.body.removeChild(loadingIndicator);
+                const canvas = await html2canvas(clone, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true
+                });
 
                 // Créer le PDF
-                const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('l', 'mm', 'a4');
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const pageWidth = pdf.internal.pageSize.getWidth();
@@ -837,23 +489,15 @@
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                 pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-                
-                // Nom du fichier
-                const docNumber = document.getElementById('doc-number').value.trim();
-                const fileName = docNumber ? `Requisition_${docNumber}.pdf` : 'Requisition.pdf';
-                
-                // Télécharger le PDF
-                pdf.save(fileName);
+                pdf.save(`Requisition_${document.getElementById('doc-number').value}.pdf`);
 
             } catch (error) {
-                console.error("Erreur lors de la génération du PDF:", error);
-                alert("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.");
-                
-                // Supprimer l'indicateur de chargement en cas d'erreur
-                const loadingIndicator = document.querySelector('div[style*="loadingIndicator"]');
-                if (loadingIndicator) {
-                    document.body.removeChild(loadingIndicator);
-                }
+                console.error("Erreur PDF:", error);
+                alert("Erreur lors de la génération du PDF");
+            } finally {
+                // Nettoyer
+                const clone = document.querySelector('#pdf-content[style*="absolute"]');
+                if (clone) clone.remove();
             }
         }
     </script>
