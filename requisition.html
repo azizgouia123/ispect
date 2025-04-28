@@ -140,6 +140,8 @@
             padding: 6px;
             text-align: center;
             vertical-align: middle;
+            white-space: normal !important;
+            word-wrap: break-word !important;
         }
         
         th {
@@ -248,6 +250,16 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 1rem;
+        }
+
+        /* Styles pour le PDF */
+        .pdf-text {
+            padding: 4px;
+            min-height: 20px;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            width: 100%;
+            display: block;
         }
 
         /* Media Queries pour mobile */
@@ -397,8 +409,8 @@
             <table id="partsTable">
                 <thead>
                     <tr>
-                        <th style="width: 120px;">N° ITEM</th>
-                        <th>DESCRIPTION</th>
+                        <th style="min-width: 120px;">N° ITEM</th>
+                        <th style="min-width: 200px;">DESCRIPTION</th>
                         <th style="width: 60px;">QTÉ</th>
                         <th style="width: 80px;">N° UNITÉ</th>
                         <th style="width: 80px;">MODÈLE</th>
@@ -748,28 +760,56 @@
             }
 
             try {
-                // Masquer les éléments qui ne doivent pas apparaître dans le PDF
-                const elementsToHide = document.querySelectorAll('.table-controls, .delete-row, .mobile-help');
-                const originalDisplay = [];
-                
-                elementsToHide.forEach(el => {
-                    originalDisplay.push(el.style.display);
-                    el.style.display = 'none';
+                // Créer un clone du contenu original
+                const originalContent = document.getElementById('pdf-content');
+                const clone = originalContent.cloneNode(true);
+                clone.style.position = 'absolute';
+                clone.style.left = '-9999px';
+                clone.style.width = originalContent.offsetWidth + 'px';
+                document.body.appendChild(clone);
+
+                // Remplacer les éléments de formulaire par du texte statique
+                clone.querySelectorAll('input, select, textarea').forEach(element => {
+                    const div = document.createElement('div');
+                    div.className = 'pdf-text';
+                    
+                    if (element.type === 'checkbox' || element.type === 'radio') {
+                        if (element.checked) {
+                            div.textContent = element.nextElementSibling.textContent;
+                        }
+                    } else if (element.tagName === 'SELECT') {
+                        div.textContent = element.options[element.selectedIndex]?.text || '';
+                    } else {
+                        div.textContent = element.value;
+                    }
+
+                    element.parentNode.replaceChild(div, element);
                 });
 
-                // Options adaptées pour mobile
-                const isMobile = window.innerWidth < 768;
+                // Supprimer les éléments inutiles dans le PDF
+                clone.querySelectorAll('.table-controls, .delete-row, .mobile-help, .error-message').forEach(el => {
+                    el.remove();
+                });
+
+                // Ajustements supplémentaires pour le tableau
+                clone.querySelectorAll('th, td').forEach(cell => {
+                    cell.style.whiteSpace = 'normal';
+                    cell.style.wordWrap = 'break-word';
+                    cell.style.padding = '4px';
+                });
+
+                // Options html2canvas
                 const options = {
-                    scale: isMobile ? 1 : 2,
+                    scale: 2,
                     useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: true,
+                    allowTaint: true,
                     scrollX: 0,
-                    scrollY: -window.scrollY,
-                    windowWidth: document.documentElement.scrollWidth,
-                    windowHeight: document.documentElement.scrollHeight,
-                    backgroundColor: '#FFFFFF'
+                    scrollY: 0
                 };
 
-                // Ajouter un indicateur de chargement
+                // Afficher un indicateur de chargement
                 const loadingIndicator = document.createElement('div');
                 loadingIndicator.style.position = 'fixed';
                 loadingIndicator.style.top = '50%';
@@ -783,43 +823,20 @@
                 loadingIndicator.textContent = 'Génération du PDF en cours...';
                 document.body.appendChild(loadingIndicator);
 
-                // Capturer le contenu
-                const canvas = await html2canvas(document.getElementById('pdf-content'), options);
-                
-                // Supprimer l'indicateur de chargement
+                // Générer l'image
+                const canvas = await html2canvas(clone, options);
+                document.body.removeChild(clone);
                 document.body.removeChild(loadingIndicator);
-                
-                // Restaurer les éléments masqués
-                elementsToHide.forEach((el, index) => {
-                    el.style.display = originalDisplay[index];
-                });
 
-                // Créer le PDF avec orientation paysage pour mobile
+                // Créer le PDF
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF(isMobile ? 'l' : 'p', 'mm', 'a4');
-                const imgData = canvas.toDataURL('image/jpeg', 0.8);
-                
-                // Calculer les dimensions
+                const pdf = new jsPDF('l', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/jpeg', 0.9);
                 const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
                 const imgWidth = pageWidth;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
-                // Ajuster la hauteur si nécessaire
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                // Ajouter la première page
-                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                // Ajouter des pages supplémentaires si nécessaire
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
-                }
+
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
                 
                 // Nom du fichier
                 const docNumber = document.getElementById('doc-number').value.trim();
@@ -830,11 +847,13 @@
 
             } catch (error) {
                 console.error("Erreur lors de la génération du PDF:", error);
-                document.querySelector('.table-controls').style.display = '';
-                if (document.querySelector('.loading-indicator')) {
-                    document.body.removeChild(document.querySelector('.loading-indicator'));
-                }
                 alert("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.");
+                
+                // Supprimer l'indicateur de chargement en cas d'erreur
+                const loadingIndicator = document.querySelector('div[style*="loadingIndicator"]');
+                if (loadingIndicator) {
+                    document.body.removeChild(loadingIndicator);
+                }
             }
         }
     </script>
