@@ -154,6 +154,9 @@
         .pdf-text {
             white-space: normal !important;
             word-wrap: break-word !important;
+            padding: 4px;
+            min-height: 20px;
+            display: block;
         }
         
         @media (max-width: 768px) {
@@ -285,7 +288,20 @@
                     <option value="" disabled selected>Sélectionner</option>
                     <option value="Dominic Vallée">Dominic Vallée</option>
                     <option value="Raphael Bouchard">Raphael Bouchard</option>
-                    <!-- Autres options -->
+                    <option value="Christopher's Rivas">Christopher's Rivas</option>
+                    <option value="Benoit Corneau">Benoit Corneau</option>
+                    <option value="Marc-André Moreau">Marc-André Moreau</option>
+                    <option value="Roger Leclair">Roger Leclair</option>
+                    <option value="Pierre-Luc Carmel">Pierre-Luc Carmel</option>
+                    <option value="Robert Langlois">Robert Langlois</option>
+                    <option value="Benjamin Couture">Benjamin Couture</option>
+                    <option value="Éric Rabouin">Éric Rabouin</option>
+                    <option value="Guillaume Marcoux">Guillaume Marcoux</option>
+                    <option value="Karim Mammouche">Karim Mammouche</option>
+                    <option value="Sébastien Cloutier">Sébastien Cloutier</option>
+                    <option value="Yassine Sakhraji">Yassine Sakhraji</option>
+                    <option value="Soufiane Hamil">Soufiane Hamil</option>
+                    <option value="Sérigne Mansour Diagne">Énergie - Sérigne Mansour Diagne</option>
                 </select>
             </div>
             <div class="signature-block">
@@ -309,32 +325,42 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Remplir les ateliers
             const container = document.getElementById('workshop-checkboxes');
-            workshops.forEach(workshop => {
-                const label = document.createElement('label');
-                label.innerHTML = `<input type="radio" name="workshop" value="${workshop}"> ${workshop}`;
-                container.appendChild(label);
-            });
+            if (container) {
+                workshops.forEach(workshop => {
+                    const label = document.createElement('label');
+                    label.innerHTML = `<input type="radio" name="workshop" value="${workshop}"> ${workshop}`;
+                    container.appendChild(label);
+                });
+            }
 
             // Définir la date du jour
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('document-date').value = today;
-            document.querySelector('.order-date').value = today;
+            const dateInput = document.getElementById('document-date');
+            if (dateInput) dateInput.value = today;
+            
+            const orderDate = document.querySelector('.order-date');
+            if (orderDate) orderDate.value = today;
 
             // Synchroniser N° doc et N° bon de travail
-            document.getElementById('doc-number').addEventListener('input', function() {
-                document.querySelectorAll('.work-order-input').forEach(input => {
-                    input.value = this.value;
+            const docNumberInput = document.getElementById('doc-number');
+            if (docNumberInput) {
+                docNumberInput.addEventListener('input', function() {
+                    document.querySelectorAll('.work-order-input').forEach(input => {
+                        if (input) input.value = this.value;
+                    });
                 });
-            });
+            }
         });
 
         // Ajouter une ligne
         function addRow() {
             const tbody = document.querySelector('#partsTable tbody');
+            if (!tbody) return;
+
             const newRow = document.createElement('tr');
             const rowId = Date.now();
             const today = new Date().toISOString().split('T')[0];
-            const docNumber = document.getElementById('doc-number').value || '';
+            const docNumber = document.getElementById('doc-number')?.value || '';
 
             newRow.innerHTML = `
                 <td>
@@ -381,8 +407,16 @@
 
         // Supprimer une ligne
         function removeRow(button) {
+            if (!button) return;
+            
             const row = button.closest('tr');
-            if (document.querySelectorAll('#partsTable tbody tr').length > 1) {
+            if (!row) return;
+
+            const tbody = document.querySelector('#partsTable tbody');
+            if (!tbody) return;
+
+            const rows = tbody.querySelectorAll('tr');
+            if (rows.length > 1) {
                 row.remove();
             } else {
                 alert("Vous ne pouvez pas supprimer la dernière ligne !");
@@ -405,22 +439,28 @@
             
             // Réinitialiser les erreurs
             document.querySelectorAll('.error-message').forEach(el => {
-                el.style.display = 'none';
+                if (el) el.style.display = 'none';
             });
 
             // Valider les champs principaux
-            if (!document.getElementById('doc-number').value) {
-                document.getElementById('doc-number-error').style.display = 'block';
+            const docNumber = document.getElementById('doc-number');
+            if (!docNumber?.value) {
+                const errorElement = document.getElementById('doc-number-error');
+                if (errorElement) errorElement.style.display = 'block';
                 isValid = false;
             }
 
-            if (!document.querySelector('input[name="workshop"]:checked')) {
-                document.getElementById('workshop-error').style.display = 'block';
+            const workshopSelected = document.querySelector('input[name="workshop"]:checked');
+            if (!workshopSelected) {
+                const errorElement = document.getElementById('workshop-error');
+                if (errorElement) errorElement.style.display = 'block';
                 isValid = false;
             }
 
-            if (!document.getElementById('truck-number').value) {
-                document.getElementById('truck-number-error').style.display = 'block';
+            const truckNumber = document.getElementById('truck-number');
+            if (!truckNumber?.value) {
+                const errorElement = document.getElementById('truck-number-error');
+                if (errorElement) errorElement.style.display = 'block';
                 isValid = false;
             }
 
@@ -428,7 +468,17 @@
             document.querySelectorAll('#partsTable tbody tr').forEach(row => {
                 const inputs = row.querySelectorAll('[required]');
                 inputs.forEach(input => {
-                    if (!input.value && !(input.type === 'radio' && row.querySelector(`input[name="${input.name}"]:checked`))) {
+                    if (!input) return;
+                    
+                    if (input.type === 'radio') {
+                        const groupName = input.name;
+                        const isChecked = row.querySelector(`input[name="${groupName}"]:checked`);
+                        if (!isChecked) {
+                            const errorMsg = input.closest('td').querySelector('.error-message');
+                            if (errorMsg) errorMsg.style.display = 'block';
+                            isValid = false;
+                        }
+                    } else if (!input.value && input.type !== 'checkbox') {
                         const errorMsg = input.closest('td').querySelector('.error-message');
                         if (errorMsg) errorMsg.style.display = 'block';
                         isValid = false;
@@ -444,43 +494,77 @@
             if (!validateForm()) return;
 
             const { jsPDF } = window.jspdf;
+            let clone = null;
+            let loadingIndicator = null;
             
             try {
+                // Afficher un indicateur de chargement
+                loadingIndicator = document.createElement('div');
+                loadingIndicator.style.position = 'fixed';
+                loadingIndicator.style.top = '50%';
+                loadingIndicator.style.left = '50%';
+                loadingIndicator.style.transform = 'translate(-50%, -50%)';
+                loadingIndicator.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                loadingIndicator.style.color = 'white';
+                loadingIndicator.style.padding = '20px';
+                loadingIndicator.style.borderRadius = '5px';
+                loadingIndicator.style.zIndex = '9999';
+                loadingIndicator.textContent = 'Génération du PDF en cours...';
+                document.body.appendChild(loadingIndicator);
+
                 // Créer un clone pour le PDF
                 const original = document.getElementById('pdf-content');
-                const clone = original.cloneNode(true);
+                if (!original) throw new Error("Élément PDF introuvable");
+                
+                clone = original.cloneNode(true);
                 clone.style.position = 'absolute';
                 clone.style.left = '-9999px';
+                clone.style.width = original.offsetWidth + 'px';
                 document.body.appendChild(clone);
 
-                // Convertir les inputs en texte
+                // Convertir les inputs en texte - version protégée
                 clone.querySelectorAll('input, select, textarea').forEach(el => {
+                    if (!el.parentNode) return;
+                    
                     const div = document.createElement('div');
                     div.className = 'pdf-text';
                     
                     if (el.type === 'checkbox' || el.type === 'radio') {
-                        if (el.checked && el.nextElementSibling) {
-                            div.textContent = el.nextElementSibling.textContent;
+                        if (el.checked) {
+                            const label = el.closest('label') || el.nextElementSibling;
+                            div.textContent = label?.textContent?.trim() || '';
                         }
                     } else if (el.tagName === 'SELECT') {
                         div.textContent = el.options[el.selectedIndex]?.text || '';
                     } else {
-                        div.textContent = el.value;
+                        div.textContent = el.value || '';
                     }
 
                     el.parentNode.replaceChild(div, el);
                 });
 
-                // Supprimer les boutons
-                clone.querySelectorAll('.table-controls, button').forEach(el => el.remove());
-
-                // Générer l'image
-                const canvas = await html2canvas(clone, {
-                    scale: 2,
-                    useCORS: true,
-                    allowTaint: true
+                // Supprimer les éléments inutiles
+                const elementsToRemove = clone.querySelectorAll('.table-controls, .delete-row, .mobile-help, .error-message, button');
+                elementsToRemove.forEach(el => {
+                    if (el?.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
                 });
 
+                // Options html2canvas
+                const options = {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#FFFFFF',
+                    logging: true,
+                    allowTaint: true,
+                    scrollX: 0,
+                    scrollY: 0
+                };
+
+                // Générer l'image
+                const canvas = await html2canvas(clone, options);
+                
                 // Créer le PDF
                 const pdf = new jsPDF('l', 'mm', 'a4');
                 const imgData = canvas.toDataURL('image/jpeg', 0.9);
@@ -489,15 +573,23 @@
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
                 pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-                pdf.save(`Requisition_${document.getElementById('doc-number').value}.pdf`);
+                
+                // Télécharger le PDF
+                const docNumber = document.getElementById('doc-number')?.value?.trim() || 'Requisition';
+                pdf.save(`Requisition_${docNumber}.pdf`);
 
             } catch (error) {
-                console.error("Erreur PDF:", error);
-                alert("Erreur lors de la génération du PDF");
+                console.error("Erreur lors de la génération du PDF:", error);
+                alert("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.");
             } finally {
-                // Nettoyer
-                const clone = document.querySelector('#pdf-content[style*="absolute"]');
-                if (clone) clone.remove();
+                // Nettoyage
+                if (loadingIndicator?.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                if (clone?.parentNode) {
+                    clone.parentNode.removeChild(clone);
+                }
             }
         }
     </script>
