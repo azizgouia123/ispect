@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Réquisition de Pièces</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f8f8;
+            margin: 0;
+            padding: 1rem;
+            color: #000;
+        }
+        .container {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 1200px;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .logo {
+            height: 70px;
+            width: auto;
+            max-width: 200px;
+            object-fit: contain;
+        }
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+        .checkboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+        .checkboxes label {
+            white-space: nowrap;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        th {
+            background: #e6edff;
+        }
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        textarea,
+        select {
+            border: 1px solid #a6c9ff;
+            background-color: #e0f2ff;
+            padding: 5px;
+            border-radius: 3px;
+            box-sizing: border-box;
+            margin: 0;
+            width: 100%;
+        }
+        input[type="checkbox"], input[type="radio"] {
+            width: auto;
+            vertical-align: middle;
+            border: 1px solid #ccc;
+            background-color: white;
+        }
+        .comments {
+            width: 100%;
+            height: 100px;
+            margin-top: 1rem;
+            background-color: #e0f2ff;
+            border: 1px solid #a6c9ff;
+            padding: 0.5rem;
+            box-sizing: border-box;
+        }
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .signature-block {
+            flex: 1;
+            min-width: 200px;
+        }
+        .signature-block select {
+            margin-top: 5px;
+        }
+        .legend {
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #000;
+            border-radius: 5px;
+        }
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .item-number {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .description-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .description-input {
+            width: 100%;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        .urgency-select {
+            width: 100%;
+        }
+        .piece-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .warranty-checkbox {
+            margin-right: 5px;
+        }
+        .table-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn {
+            padding: 8px 15px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-add {
+            background-color: #4CAF50;
+        }
+        .btn-remove {
+            background-color: #f44336;
+        }
+        .btn-pdf {
+            background-color: #2196F3;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+        .delete-row {
+            color: #f44336;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .error-message {
+            color: red;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="pdf-content">
+        <div class="header">
+            <div class="header-container">
+                <div class="header-left">
+                    <img src="logo.png" class="logo" alt="Logo entreprise" crossorigin="anonymous">
+                </div>
+                <h1>RÉQUISITION DE PIÈCES</h1>
+                <div class="header-right">
+                    <strong>N°</strong> <input type="text" id="doc-number" style="width: 100px;" required>
+                    <div class="error-message" id="doc-number-error">Ce champ est obligatoire</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <strong>VOTRE ATELIER :</strong>
+            <div class="checkboxes" id="workshop-checkboxes">
+                <!-- Les cases seront générées par JavaScript -->
+            </div>
+            <div class="error-message" id="workshop-error">Veuillez sélectionner un atelier</div>
+        </div>
+
+        <div class="form-group">
+            <label><strong>N° camion:</strong></label> 
+            <input type="text" id="truck-number" style="width: 150px;" required>
+            <div class="error-message" id="truck-number-error">Ce champ est obligatoire</div>
+        </div>
+
+        <table id="partsTable">
+            <thead>
+                <tr>
+                    <th style="width: 120px;">N° ITEM</th>
+                    <th>DESCRIPTION</th>
+                    <th style="width: 60px;">QTÉ</th>
+                    <th style="width: 80px;">N° UNITÉ</th>
+                    <th style="width: 80px;">MODÈLE</th>
+                    <th style="width: 100px;">N° BON DE TRAVAIL WYNNE</th>
+                    <th style="width: 70px;">PIÈCE</th>
+                    <th style="width: 90px;">URGENCE</th>
+                    <th style="width: 110px;">DATE DE LA COMMANDE</th>
+                    <th style="width: 30px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <div class="item-number">
+                            <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
+                            <div class="error-message">Ce champ est obligatoire</div>
+                            <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-container">
+                            <input type="text" class="description-input" placeholder="Description" required>
+                            <div class="error-message">Ce champ est obligatoire</div>
+                            <input type="text" class="description-input" placeholder="Fournisseur" required>
+                            <div class="error-message">Ce champ est obligatoire</div>
+                        </div>
+                    </td>
+                    <td>
+                        <input type="number" class="quantity-input" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td>
+                        <input type="text" class="unit-input" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td>
+                        <input type="text" class="model-input" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td>
+                        <input type="text" class="work-order-input" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td>
+                        <div class="piece-options">
+                            <label><input type="radio" class="piece-c" name="piece0" required> C</label>
+                            <label><input type="radio" class="piece-t" name="piece0" required> T</label>
+                            <div class="error-message">Veuillez sélectionner une option</div>
+                        </div>
+                    </td>
+                    <td>
+                        <select class="urgency-select" required>
+                            <option value="" disabled selected>Sélectionner</option>
+                            <option value="1">1 (1 jour)</option>
+                            <option value="2">2 (3-5 jours)</option>
+                            <option value="3">3 (5-10 jours)</option>
+                        </select>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td>
+                        <input type="date" class="order-date" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </td>
+                    <td><span class="delete-row" onclick="removeRow(this)">×</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="table-controls">
+            <button class="btn btn-add" onclick="addRow()">Ajouter une ligne</button>
+            <button class="btn btn-remove" onclick="removeLastRow()">Supprimer la dernière ligne</button>
+            <button class="btn btn-pdf" onclick="generatePDF()">Générer PDF</button>
+        </div>
+
+        <div class="form-group">
+            <label for="comments"><strong>COMMENTAIRES :</strong></label>
+            <textarea id="comments" class="comments"></textarea>
+        </div>
+
+        <div class="legend">
+            <strong>LÉGENDE</strong><br>
+            Pièce : C = En commande | T = En tablette<br>
+            Urgence : 1 = 1 jour, 2 = 3 à 5 jours, 3 = 5 à 10 jours
+        </div>
+
+        <div class="signatures">
+            <div class="signature-block">
+                Signature du superviseur
+                <select class="supervisor-signature" required>
+                    <option value="" disabled selected>Sélectionner</option>
+                    <option value="Abdelaziz Gouia">Abdelaziz Gouia</option>
+                    <option value="Jean-Pierre Laperle">Jean-Pierre Laperle</option>
+                </select>
+                <div class="error-message">Ce champ est obligatoire</div>
+            </div>
+            <div class="signature-block">
+                Signature du technicien
+                <select class="technician-signature" required>
+                    <option value="" disabled selected>Sélectionner</option>
+                    <option value="Dominic Vallée">Dominic Vallée</option>
+                    <option value="Raphael Bouchard">Raphael Bouchard</option>
+                    <option value="Christopher's Rivas">Christopher's Rivas</option>
+                    <option value="Benoit Corneau">Benoit Corneau</option>
+                    <option value="Marc-André Moreau">Marc-André Moreau</option>
+                    <option value="Roger Leclair">Roger Leclair</option>
+                    <option value="Pierre-Luc Carmel">Pierre-Luc Carmel</option>
+                    <option value="Robert Langlois">Robert Langlois</option>
+                    <option value="Benjamin Couture">Benjamin Couture</option>
+                    <option value="Éric Rabouin">Éric Rabouin</option>
+                    <option value="Guillaume Marcoux">Guillaume Marcoux</option>
+                    <option value="Karim Mammouche">Karim Mammouche</option>
+                    <option value="Sébastien Cloutier">Sébastien Cloutier</option>
+                    <option value="Yassine Sakhraji">Yassine Sakhraji</option>
+                    <option value="Soufiane Hamil">Soufiane Hamil</option>
+                    <option value="Sérigne Mansour Diagne">Énergie - Sérigne Mansour Diagne</option>
+                </select>
+                <div class="error-message">Ce champ est obligatoire</div>
+            </div>
+            <div class="signature-block">
+                Date <input type="date" id="document-date">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Liste des ateliers
+        const workshops = [
+            "Anjou", "Lévis (St-Romuald)", "St-Anselme", "Bromont", "Mirabel",
+            "Saint-Hubert", "Cowansville", "Mirabel (St-Canut)", "St-Hyacinthe",
+            "Gatineau", "Montréal (Anjou)", "Ste-Foy", "Granby", "Montréal (St-Laurent)",
+            "St-Nicolas", "Hawkesbury", "Québec (Beauport)", "Valleyfield",
+            "Laval", "Québec", "Lévis", "Sorel"
+        ];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Remplir les ateliers (radio buttons)
+            const checkboxesContainer = document.getElementById('workshop-checkboxes');
+            workshops.forEach((workshop, index) => {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="radio" name="workshop" class="workshop-radio" value="${workshop}" ${index === 0 ? 'required' : ''}> ${workshop}`;
+                checkboxesContainer.appendChild(label);
+            });
+            
+            // Définir la date du jour pour le document et les commandes
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('document-date').value = today;
+            
+            // Définir la date de commande sur la première ligne
+            const firstRowDate = document.querySelector('.order-date');
+            if (firstRowDate) {
+                firstRowDate.value = today;
+            }
+            
+            // Synchroniser N° de réquisition et N° de bon de travail
+            const docNumberInput = document.getElementById('doc-number');
+            docNumberInput.addEventListener('input', function() {
+                const workOrderInputs = document.querySelectorAll('.work-order-input');
+                workOrderInputs.forEach(input => {
+                    input.value = this.value;
+                });
+            });
+
+            // Initialiser le N° de bon de travail avec la valeur du N° de réquisition
+            if (docNumberInput.value) {
+                const workOrderInputs = document.querySelectorAll('.work-order-input');
+                workOrderInputs.forEach(input => {
+                    input.value = docNumberInput.value;
+                });
+            }
+        });
+
+        // Ajouter une ligne
+        function addRow() {
+            const tbody = document.querySelector('#partsTable tbody');
+            const newRow = document.createElement('tr');
+            const today = new Date().toISOString().split('T')[0];
+            const docNumber = document.getElementById('doc-number').value;
+            const rowId = Date.now();
+            
+            newRow.innerHTML = `
+                <td>
+                    <div class="item-number">
+                        <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                        <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
+                    </div>
+                </td>
+                <td>
+                    <div class="description-container">
+                        <input type="text" class="description-input" placeholder="Description" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                        <input type="text" class="description-input" placeholder="Fournisseur" required>
+                        <div class="error-message">Ce champ est obligatoire</div>
+                    </div>
+                </td>
+                <td>
+                    <input type="number" class="quantity-input" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td>
+                    <input type="text" class="unit-input" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td>
+                    <input type="text" class="model-input" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td>
+                    <input type="text" class="work-order-input" value="${docNumber || ''}" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td>
+                    <div class="piece-options">
+                        <label><input type="radio" class="piece-c" name="piece${rowId}" required> C</label>
+                        <label><input type="radio" class="piece-t" name="piece${rowId}" required> T</label>
+                        <div class="error-message">Veuillez sélectionner une option</div>
+                    </div>
+                </td>
+                <td>
+                    <select class="urgency-select" required>
+                        <option value="" disabled selected>Sélectionner</option>
+                        <option value="1">1 (1 jour)</option>
+                        <option value="2">2 (3-5 jours)</option>
+                        <option value="3">3 (5-10 jours)</option>
+                    </select>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td>
+                    <input type="date" class="order-date" value="${today}" required>
+                    <div class="error-message">Ce champ est obligatoire</div>
+                </td>
+                <td><span class="delete-row" onclick="removeRow(this)">×</span></td>
+            `;
+            
+            tbody.appendChild(newRow);
+        }
+
+        // Supprimer la dernière ligne
+        function removeLastRow() {
+            const tbody = document.querySelector('#partsTable tbody');
+            const rows = tbody.querySelectorAll('tr');
+            if (rows.length > 1) {
+                tbody.removeChild(rows[rows.length - 1]);
+            } else {
+                alert("Vous ne pouvez pas supprimer la dernière ligne !");
+            }
+        }
+
+        // Supprimer une ligne spécifique
+        function removeRow(button) {
+            const row = button.closest('tr');
+            const tbody = document.querySelector('#partsTable tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            if (rows.length > 1) {
+                row.remove();
+            } else {
+                alert("Vous ne pouvez pas supprimer la dernière ligne !");
+            }
+        }
+
+        // Valider le formulaire
+        function validateForm() {
+            let isValid = true;
+            
+            // Réinitialiser les messages d'erreur
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            // Valider le numéro de document
+            const docNumber = document.getElementById('doc-number').value.trim();
+            if (!docNumber) {
+                document.getElementById('doc-number-error').style.display = 'block';
+                isValid = false;
+            }
+
+            // Valider exactement un atelier sélectionné
+            const workshopSelected = document.querySelector('.workshop-radio:checked');
+            if (!workshopSelected) {
+                document.getElementById('workshop-error').style.display = 'block';
+                isValid = false;
+            }
+
+            // Valider le numéro de camion
+            if (!document.getElementById('truck-number').value.trim()) {
+                document.getElementById('truck-number-error').style.display = 'block';
+                isValid = false;
+            }
+
+            // Valider chaque ligne du tableau
+            const rows = document.querySelectorAll('#partsTable tbody tr');
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const rowNumber = i + 1;
+                
+                // Vérifier tous les champs obligatoires
+                const requiredInputs = row.querySelectorAll('[required]');
+                for (const input of requiredInputs) {
+                    if (input.type === 'radio' || input.type === 'checkbox') {
+                        const groupName = input.name;
+                        const isChecked = row.querySelector(`[name="${groupName}"]:checked`);
+                        if (!isChecked) {
+                            const errorMsg = row.querySelector('.piece-options .error-message');
+                            if (errorMsg) errorMsg.style.display = 'block';
+                            isValid = false;
+                        }
+                    } else if (!input.value && input.type !== 'checkbox') {
+                        const errorMsg = input.nextElementSibling;
+                        if (errorMsg && errorMsg.classList.contains('error-message')) {
+                            errorMsg.style.display = 'block';
+                        }
+                        isValid = false;
+                    }
+                }
+                
+                // Vérifier que N° de bon de travail = N° de réquisition
+                const workOrderValue = row.querySelector('.work-order-input').value;
+                if (workOrderValue !== docNumber) {
+                    alert(`Ligne ${rowNumber}: Le N° de bon de travail doit être identique au N° de réquisition`);
+                    isValid = false;
+                }
+            }
+
+            // Valider les signatures
+            const supervisorSignature = document.querySelector('.supervisor-signature');
+            if (!supervisorSignature.value) {
+                supervisorSignature.nextElementSibling.style.display = 'block';
+                isValid = false;
+            }
+
+            const technicianSignature = document.querySelector('.technician-signature');
+            if (!technicianSignature.value) {
+                technicianSignature.nextElementSibling.style.display = 'block';
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Générer le PDF
+        async function generatePDF() {
+            if (!validateForm()) {
+                return;
+            }
+
+            try {
+                // Masquer les boutons temporairement
+                const tableControls = document.querySelector('.table-controls');
+                const originalDisplay = tableControls.style.display;
+                tableControls.style.display = 'none';
+
+                // Options pour html2canvas
+                const options = {
+                    scale: 2,
+                    useCORS: true,  // Important pour les images locales
+                    logging: true,
+                    scrollX: 0,
+                    scrollY: 0,
+                    windowWidth: document.getElementById('pdf-content').scrollWidth,
+                    windowHeight: document.getElementById('pdf-content').scrollHeight
+                };
+
+                // Capturer le contenu
+                const canvas = await html2canvas(document.getElementById('pdf-content'), options);
+                
+                // Restaurer les boutons
+                tableControls.style.display = originalDisplay;
+
+                // Créer le PDF
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Calculer les dimensions
+                const imgWidth = pdf.internal.pageSize.getWidth();
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Ajouter l'image au PDF
+                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                
+                // Nom du fichier
+                const docNumber = document.getElementById('doc-number').value.trim();
+                const fileName = docNumber ? `Requisition_${docNumber}.pdf` : 'Requisition.pdf';
+                
+                // Télécharger le PDF
+                pdf.save(fileName);
+
+            } catch (error) {
+                console.error("Erreur lors de la génération du PDF:", error);
+                document.querySelector('.table-controls').style.display = '';
+                alert("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.");
+            }
+        }
+    </script>
+</body>
+</html>
