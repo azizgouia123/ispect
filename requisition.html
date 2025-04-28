@@ -2,7 +2,9 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Réquisition de Pièces</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -13,25 +15,35 @@
             margin: 0;
             padding: 0;
         }
-
+        
         body {
             font-family: Arial, sans-serif;
             background: #f8f8f8;
             padding: 10px;
             color: #000;
-            font-size: 16px; /* Augmentation de la taille de la police de base */
+            font-size: 14px;
             line-height: 1.4;
             -webkit-text-size-adjust: 100%;
         }
-
+        
         .container {
             background: #fff;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             max-width: 100%;
             margin: 0 auto;
             box-shadow: 0 0 5px rgba(0,0,0,0.1);
-            overflow-x: auto; /* Permet le défilement horizontal si nécessaire */
+            overflow-x: auto;
+        }
+
+        /* Aide mobile */
+        .mobile-help {
+            display: none;
+            background: #ffeb3b;
+            padding: 8px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
         }
 
         /* En-tête responsive */
@@ -39,56 +51,56 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
-
+        
         .header-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
         }
-
+        
         .header-left, .header-right {
             width: 100%;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
-
+        
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             text-align: center;
             width: 100%;
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         /* Logo */
         .logo {
-            height: 60px;
+            height: 50px;
             width: auto;
-            max-width: 180px;
+            max-width: 150px;
             object-fit: contain;
         }
 
         /* Formulaire */
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
-
+        
         .checkboxes {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            font-size: 0.9rem;
-            margin-top: 8px;
+            gap: 5px;
+            font-size: 0.8rem;
+            margin-top: 5px;
         }
-
+        
         .checkboxes label {
             white-space: nowrap;
             display: flex;
             align-items: center;
         }
-
+        
         input[type="text"],
         input[type="number"],
         input[type="date"],
@@ -96,40 +108,40 @@
         select {
             border: 1px solid #a6c9ff;
             background-color: #e0f2ff;
-            padding: 8px;
+            padding: 6px 8px;
             border-radius: 4px;
             width: 100%;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
-
-        input[type="checkbox"],
+        
+        input[type="checkbox"], 
         input[type="radio"] {
             width: auto;
-            margin-right: 8px;
+            margin-right: 5px;
         }
 
         /* Tableau responsive */
         .table-wrapper {
             width: 100%;
             overflow-x: auto;
-            margin-top: 15px;
+            margin-top: 12px;
             -webkit-overflow-scrolling: touch;
         }
-
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
-            min-width: 600px; /* Réduction de la largeur minimale */
+            font-size: 0.75rem;
+            min-width: 800px;
         }
-
+        
         th, td {
             border: 1px solid #ccc;
-            padding: 8px;
+            padding: 6px;
             text-align: center;
             vertical-align: middle;
         }
-
+        
         th {
             background: #e6edff;
             font-weight: bold;
@@ -138,65 +150,65 @@
         /* Zones de texte */
         .comments {
             width: 100%;
-            height: 100px;
-            margin-top: 15px;
+            height: 80px;
+            margin-top: 12px;
             resize: vertical;
         }
 
         /* Boutons */
         .btn {
-            padding: 10px 15px;
+            padding: 8px 12px;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 1rem;
-            margin: 5px;
+            font-size: 0.8rem;
+            margin: 3px;
             white-space: nowrap;
         }
-
+        
         .btn-add {
             background-color: #4CAF50;
         }
-
+        
         .btn-remove {
             background-color: #f44336;
         }
-
+        
         .btn-pdf {
             background-color: #2196F3;
         }
-
+        
         .table-controls {
             display: flex;
             justify-content: center;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 12px;
         }
 
         /* Signatures */
         .signatures {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 15px;
         }
-
+        
         .signature-block {
             flex: 1;
             min-width: 100%;
         }
-
+        
         .signature-block select {
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         /* Légende */
         .legend {
-            font-size: 0.9rem;
-            margin-top: 15px;
-            padding: 10px;
+            font-size: 0.8rem;
+            margin-top: 12px;
+            padding: 8px;
             background-color: #f0f0f0;
             border: 1px solid #000;
             border-radius: 5px;
@@ -205,8 +217,8 @@
         /* Messages d'erreur */
         .error-message {
             color: red;
-            font-size: 0.8rem;
-            margin-top: 5px;
+            font-size: 0.7rem;
+            margin-top: 3px;
             display: none;
         }
 
@@ -215,230 +227,144 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
-
+        
         .description-container {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 5px;
         }
-
+        
         .piece-options {
             display: flex;
-            flex-direction: row; /* Changement pour afficher côte à côte sur mobile aussi */
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
-            justify-content: center;
+            gap: 5px;
         }
-
+        
         .delete-row {
             color: #f44336;
             cursor: pointer;
             font-weight: bold;
-            font-size: 1.2rem;
-            display: block; /* Assure que le 'x' prend toute la largeur dans l'affichage empilé */
-            text-align: center;
+            font-size: 1rem;
         }
 
-        /* Media Queries pour les écrans de téléphone (max-width: 767px) */
+        /* Media Queries pour mobile */
         @media (max-width: 767px) {
-            body {
-                font-size: 1rem; /* Augmentation de la taille de la police sur mobile */
-                padding: 8px;
-            }
-
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                margin-bottom: 10px;
-            }
-
-            .header-left, .header-right {
-                margin-bottom: 5px;
-            }
-
-            h1 {
-                font-size: 1.3rem;
-                margin: 5px 0;
-            }
-
-            .logo {
-                height: 50px;
-                max-width: 150px;
-            }
-
-            .checkboxes {
-                font-size: 0.85rem;
-                gap: 5px;
-            }
-
-            /* Style pour empiler les colonnes du tableau sur mobile */
-            table thead {
-                display: none; /* Masquer l'en-tête du tableau */
-            }
-
-            table tbody tr {
+            .mobile-help {
                 display: block;
-                margin-bottom: 15px;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 10px;
             }
-
-            table tbody td {
-                display: flex;
-                align-items: center;
-                padding: 5px 10px;
-                border-bottom: 1px solid #eee;
-                text-align: left;
+            
+            table {
+                font-size: 0.65rem;
             }
-
-            table tbody td:last-child {
-                border-bottom: none;
+            
+            th, td {
+                padding: 4px;
             }
-
-            table tbody td::before {
-                content: attr(data-label); /* Afficher le nom de la colonne comme étiquette */
-                font-weight: bold;
-                width: 120px; /* Ajustez la largeur selon vos besoins */
-                display: inline-block;
-                margin-right: 10px;
-                color: #555;
+            
+            input[type="text"],
+            input[type="number"],
+            input[type="date"],
+            textarea,
+            select {
+                font-size: 0.7rem;
+                padding: 4px;
             }
-
-            .item-number {
-                align-items: flex-start;
-            }
-
-            .piece-options {
-                flex-direction: row;
-                justify-content: flex-start;
-            }
-
-            .delete-row {
-                text-align: right;
-                margin-top: 5px;
-            }
-
-            .signatures {
-                gap: 10px;
-            }
-
+            
             .btn {
-                font-size: 0.9rem;
-                padding: 8px 12px;
+                padding: 6px 8px;
+                font-size: 0.7rem;
+            }
+            
+            .item-number, .piece-options {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .header-left, .header-right {
+                text-align: center;
             }
         }
 
-        /* Media Queries pour desktop (min-width: 768px) - Légères modifications pour cohérence */
+        /* Media Queries pour desktop */
         @media (min-width: 768px) {
             body {
                 padding: 15px;
-                font-size: 1rem; /* Rétablir la taille de police pour le bureau */
+                font-size: 16px;
             }
-
+            
             .container {
                 padding: 15px;
                 max-width: 1200px;
             }
-
+            
             .header {
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 15px;
             }
-
+            
             .header-container {
                 flex-direction: row;
                 align-items: center;
             }
-
+            
             .header-left, .header-right {
                 width: auto;
                 text-align: left;
                 margin-bottom: 0;
             }
-
+            
             .header-right {
                 text-align: right;
             }
-
+            
             h1 {
-                font-size: 1.7rem;
+                font-size: 1.5rem;
                 margin: 0 15px;
             }
-
+            
             .logo {
                 height: 70px;
                 max-width: 200px;
             }
-
+            
             table {
-                font-size: 1rem;
-                min-width: 800px;
+                font-size: 0.85rem;
+                min-width: 100%;
             }
-
+            
             th, td {
-                padding: 10px;
+                padding: 8px;
             }
-
-            table thead {
-                display: table-header-group; /* Afficher l'en-tête sur bureau */
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 0.85rem;
             }
-
-            table tbody tr {
-                display: table-row;
-                margin-bottom: 0;
-                border: none;
-                padding: 0;
-            }
-
-            table tbody td {
-                display: table-cell;
-                border-bottom: 1px solid #ccc;
-                text-align: center;
-            }
-
-            table tbody td::before {
-                content: none; /* Ne pas afficher les étiquettes sur bureau */
-            }
-
-            .piece-options {
-                flex-direction: column;
-                justify-content: center;
-            }
-
-            .delete-row {
-                display: inline;
-                text-align: center;
-                margin-top: 0;
-            }
-
+            
             .signatures {
                 flex-direction: row;
-                gap: 20px;
             }
-
+            
             .signature-block {
                 min-width: 200px;
             }
-
+            
             .table-wrapper {
                 overflow-x: visible;
-            }
-
-            .btn {
-                font-size: 1rem;
-                padding: 10px 15px;
             }
         }
     </style>
 </head>
 <body>
+    <div class="mobile-help">
+        <strong>Conseil :</strong> Faites défiler horizontalement pour voir tout le tableau.
+    </div>
+
     <div class="container" id="pdf-content">
         <div class="header">
             <div class="header-container">
@@ -447,7 +373,7 @@
                 </div>
                 <h1>RÉQUISITION DE PIÈCES</h1>
                 <div class="header-right">
-                    <strong>N°</strong> <input type="text" id="doc-number" style="width: 120px;" required>
+                    <strong>N°</strong> <input type="text" id="doc-number" style="width: 100px;" required>
                     <div class="error-message" id="doc-number-error">Ce champ est obligatoire</div>
                 </div>
             </div>
@@ -456,13 +382,14 @@
         <div class="form-group">
             <strong>VOTRE ATELIER :</strong>
             <div class="checkboxes" id="workshop-checkboxes">
-                </div>
+                <!-- Les cases seront générées par JavaScript -->
+            </div>
             <div class="error-message" id="workshop-error">Veuillez sélectionner un atelier</div>
         </div>
 
         <div class="form-group">
-            <label><strong>N° camion:</strong></label>
-            <input type="text" id="truck-number" style="width: 180px;" required>
+            <label><strong>N° camion:</strong></label> 
+            <input type="text" id="truck-number" style="width: 150px;" required>
             <div class="error-message" id="truck-number-error">Ce champ est obligatoire</div>
         </div>
 
@@ -484,14 +411,14 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td data-label="N° ITEM">
+                        <td>
                             <div class="item-number">
-                                <input type="text" class="item-input" placeholder="N° Item" style="width: 100px;" required>
+                                <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
                                 <div class="error-message">Ce champ est obligatoire</div>
                                 <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
                             </div>
                         </td>
-                        <td data-label="DESCRIPTION">
+                        <td>
                             <div class="description-container">
                                 <input type="text" class="description-input" placeholder="Description" required>
                                 <div class="error-message">Ce champ est obligatoire</div>
@@ -499,39 +426,39 @@
                                 <div class="error-message">Ce champ est obligatoire</div>
                             </div>
                         </td>
-                        <td data-label="QTÉ">
+                        <td>
                             <input type="number" class="quantity-input" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td data-label="N° UNITÉ">
+                        <td>
                             <input type="text" class="unit-input" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td data-label="MODÈLE">
+                        <td>
                             <input type="text" class="model-input" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td data-label="N° BON DE TRAVAIL WYNNE">
+                        <td>
                             <input type="text" class="work-order-input" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td data-label="PIÈCE">
+                        <td>
                             <div class="piece-options">
                                 <label><input type="radio" class="piece-c" name="piece0" required> C</label>
                                 <label><input type="radio" class="piece-t" name="piece0" required> T</label>
                                 <div class="error-message">Veuillez sélectionner une option</div>
                             </div>
                         </td>
-                        <td data-label="URGENCE">
-                            <select
-<option value="" disabled selected>Sélectionner</option>
+                        <td>
+                            <select class="urgency-select" required>
+                                <option value="" disabled selected>Sélectionner</option>
                                 <option value="1">1 (1 jour)</option>
                                 <option value="2">2 (3-5 jours)</option>
                                 <option value="3">3 (5-10 jours)</option>
                             </select>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
-                        <td data-label="DATE DE LA COMMANDE">
+                        <td>
                             <input type="date" class="order-date" required>
                             <div class="error-message">Ce champ est obligatoire</div>
                         </td>
@@ -616,17 +543,17 @@
                 label.innerHTML = `<input type="radio" name="workshop" class="workshop-radio" value="${workshop}" ${index === 0 ? 'required' : ''}> ${workshop}`;
                 checkboxesContainer.appendChild(label);
             });
-
+            
             // Définir la date du jour pour le document et les commandes
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('document-date').value = today;
-
+            
             // Définir la date de commande sur la première ligne
             const firstRowDate = document.querySelector('.order-date');
             if (firstRowDate) {
                 firstRowDate.value = today;
             }
-
+            
             // Synchroniser N° de réquisition et N° de bon de travail
             const docNumberInput = document.getElementById('doc-number');
             docNumberInput.addEventListener('input', function() {
@@ -652,16 +579,16 @@
             const today = new Date().toISOString().split('T')[0];
             const docNumber = document.getElementById('doc-number').value;
             const rowId = Date.now();
-
+            
             newRow.innerHTML = `
-                <td data-label="N° ITEM">
+                <td>
                     <div class="item-number">
-                        <input type="text" class="item-input" placeholder="N° Item" style="width: 100px;" required>
+                        <input type="text" class="item-input" placeholder="N° Item" style="width: 80px;" required>
                         <div class="error-message">Ce champ est obligatoire</div>
                         <label><input type="checkbox" class="warranty-checkbox"> Garantie</label>
                     </div>
                 </td>
-                <td data-label="DESCRIPTION">
+                <td>
                     <div class="description-container">
                         <input type="text" class="description-input" placeholder="Description" required>
                         <div class="error-message">Ce champ est obligatoire</div>
@@ -669,30 +596,30 @@
                         <div class="error-message">Ce champ est obligatoire</div>
                     </div>
                 </td>
-                <td data-label="QTÉ">
+                <td>
                     <input type="number" class="quantity-input" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td data-label="N° UNITÉ">
+                <td>
                     <input type="text" class="unit-input" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td data-label="MODÈLE">
+                <td>
                     <input type="text" class="model-input" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td data-label="N° BON DE TRAVAIL WYNNE">
+                <td>
                     <input type="text" class="work-order-input" value="${docNumber || ''}" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td data-label="PIÈCE">
+                <td>
                     <div class="piece-options">
                         <label><input type="radio" class="piece-c" name="piece${rowId}" required> C</label>
                         <label><input type="radio" class="piece-t" name="piece${rowId}" required> T</label>
                         <div class="error-message">Veuillez sélectionner une option</div>
                     </div>
                 </td>
-                <td data-label="URGENCE">
+                <td>
                     <select class="urgency-select" required>
                         <option value="" disabled selected>Sélectionner</option>
                         <option value="1">1 (1 jour)</option>
@@ -701,13 +628,13 @@
                     </select>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
-                <td data-label="DATE DE LA COMMANDE">
+                <td>
                     <input type="date" class="order-date" value="${today}" required>
                     <div class="error-message">Ce champ est obligatoire</div>
                 </td>
                 <td><span class="delete-row" onclick="removeRow(this)">×</span></td>
             `;
-
+            
             tbody.appendChild(newRow);
         }
 
@@ -727,7 +654,7 @@
             const row = button.closest('tr');
             const tbody = document.querySelector('#partsTable tbody');
             const rows = tbody.querySelectorAll('tr');
-
+            
             if (rows.length > 1) {
                 row.remove();
             } else {
@@ -738,7 +665,7 @@
         // Valider le formulaire
         function validateForm() {
             let isValid = true;
-
+            
             // Réinitialiser les messages d'erreur
             document.querySelectorAll('.error-message').forEach(el => {
                 el.style.display = 'none';
@@ -769,7 +696,7 @@
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 const rowNumber = i + 1;
-
+                
                 // Vérifier tous les champs obligatoires
                 const requiredInputs = row.querySelectorAll('[required]');
                 for (const input of requiredInputs) {
@@ -789,7 +716,7 @@
                         isValid = false;
                     }
                 }
-
+                
                 // Vérifier que N° de bon de travail = N° de réquisition
                 const workOrderValue = row.querySelector('.work-order-input').value;
                 if (workOrderValue !== docNumber) {
@@ -821,50 +748,92 @@
             }
 
             try {
-                // Masquer les boutons temporairement
-                const tableControls = document.querySelector('.table-controls');
-                const originalDisplay = tableControls.style.display;
-                tableControls.style.display = 'none';
+                // Masquer les éléments qui ne doivent pas apparaître dans le PDF
+                const elementsToHide = document.querySelectorAll('.table-controls, .delete-row, .mobile-help');
+                const originalDisplay = [];
+                
+                elementsToHide.forEach(el => {
+                    originalDisplay.push(el.style.display);
+                    el.style.display = 'none';
+                });
 
-                // Options pour html2canvas
+                // Options adaptées pour mobile
+                const isMobile = window.innerWidth < 768;
                 const options = {
-                    scale: window.innerWidth < 768 ? 1 : 2,
+                    scale: isMobile ? 1 : 2,
                     useCORS: true,
-                    logging: true,
                     scrollX: 0,
-                    scrollY: 0,
-                    windowWidth: document.getElementById('pdf-content').scrollWidth,
-                    windowHeight: document.getElementById('pdf-content').scrollHeight
+                    scrollY: -window.scrollY,
+                    windowWidth: document.documentElement.scrollWidth,
+                    windowHeight: document.documentElement.scrollHeight,
+                    backgroundColor: '#FFFFFF'
                 };
+
+                // Ajouter un indicateur de chargement
+                const loadingIndicator = document.createElement('div');
+                loadingIndicator.style.position = 'fixed';
+                loadingIndicator.style.top = '50%';
+                loadingIndicator.style.left = '50%';
+                loadingIndicator.style.transform = 'translate(-50%, -50%)';
+                loadingIndicator.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                loadingIndicator.style.color = 'white';
+                loadingIndicator.style.padding = '20px';
+                loadingIndicator.style.borderRadius = '5px';
+                loadingIndicator.style.zIndex = '9999';
+                loadingIndicator.textContent = 'Génération du PDF en cours...';
+                document.body.appendChild(loadingIndicator);
 
                 // Capturer le contenu
                 const canvas = await html2canvas(document.getElementById('pdf-content'), options);
+                
+                // Supprimer l'indicateur de chargement
+                document.body.removeChild(loadingIndicator);
+                
+                // Restaurer les éléments masqués
+                elementsToHide.forEach((el, index) => {
+                    el.style.display = originalDisplay[index];
+                });
 
-                // Restaurer les boutons
-                tableControls.style.display = originalDisplay;
-
-                // Créer le PDF
+                // Créer le PDF avec orientation paysage pour mobile
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdf = new jsPDF(isMobile ? 'l' : 'p', 'mm', 'a4');
                 const imgData = canvas.toDataURL('image/jpeg', 0.8);
-
+                
                 // Calculer les dimensions
-                const imgWidth = pdf.internal.pageSize.getWidth();
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+                const imgWidth = pageWidth;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                // Ajouter l'image au PDF
-                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-
+                
+                // Ajuster la hauteur si nécessaire
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                // Ajouter la première page
+                pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                // Ajouter des pages supplémentaires si nécessaire
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
                 // Nom du fichier
                 const docNumber = document.getElementById('doc-number').value.trim();
                 const fileName = docNumber ? `Requisition_${docNumber}.pdf` : 'Requisition.pdf';
-
+                
                 // Télécharger le PDF
                 pdf.save(fileName);
 
             } catch (error) {
                 console.error("Erreur lors de la génération du PDF:", error);
                 document.querySelector('.table-controls').style.display = '';
+                if (document.querySelector('.loading-indicator')) {
+                    document.body.removeChild(document.querySelector('.loading-indicator'));
+                }
                 alert("Une erreur est survenue lors de la génération du PDF. Veuillez réessayer.");
             }
         }
