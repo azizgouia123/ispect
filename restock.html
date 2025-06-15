@@ -113,39 +113,35 @@
       canvas.height = h;
       context.drawImage(video, 0, 0, w, h);
 
-      // Petite bande centrale (rectangle)
       const cropX = w * 0.2;
       const cropY = h * 0.425;
       const cropW = w * 0.6;
       const cropH = h * 0.15;
 
-      // Extraction de la zone
       const imageData = context.getImageData(cropX, cropY, cropW, cropH);
-
-      // Canvas crop pour affichage et OCR
       const canvasCrop = document.createElement('canvas');
       canvasCrop.width = cropW;
       canvasCrop.height = cropH;
       const ctxCrop = canvasCrop.getContext('2d');
       ctxCrop.putImageData(imageData, 0, 0);
 
-      // Amélioration contraste (noir/blanc fort)
+      // Contraste noir/blanc
       const imgData = ctxCrop.getImageData(0, 0, cropW, cropH);
       for (let i = 0; i < imgData.data.length; i += 4) {
-        const avg = (imgData.data[i] + imgData.data[i+1] + imgData.data[i+2]) / 3;
+        const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
         const val = avg > 140 ? 255 : 0;
         imgData.data[i] = val;
-        imgData.data[i+1] = val;
-        imgData.data[i+2] = val;
+        imgData.data[i + 1] = val;
+        imgData.data[i + 2] = val;
       }
       ctxCrop.putImageData(imgData, 0, 0);
 
-      // Affiche l'image capturée
+      // Affiche l’image capturée
       const preview = document.getElementById('preview');
       preview.src = canvasCrop.toDataURL();
       preview.style.display = "block";
 
-      // OCR avec Tesseract, ligne unique et whitelist
+      // OCR avec Tesseract
       const { data: { text } } = await Tesseract.recognize(canvasCrop, 'eng', {
         logger: m => console.log(m),
         tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
@@ -153,10 +149,12 @@
         tessedit_ocr_engine_mode: 1
       });
 
-      const nettoye = text.trim().replace(/[^A-Z0-9]/g, '');
-      document.getElementById('codeBarre').value = nettoye;
+      const nettoye = text
+        .replace(/\s+/g, '')     // supprime espaces, retours, tab
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, ''); // conserve que lettres/chiffres
 
-      // Affiche texte OCR brut (debug)
+      document.getElementById('codeBarre').value = nettoye;
       document.getElementById('ocr-result').textContent = `Texte OCR brut : ${text.trim()}`;
     }
 
