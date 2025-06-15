@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Scan de pièces - Camion</title>
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <title>OCR Pièces Camion</title>
+  <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f0f0;
+      background: #f4f4f4;
       padding: 20px;
     }
     .container {
@@ -20,12 +20,28 @@
     }
     video {
       width: 100%;
-      border-radius: 8px;
+      border-radius: 10px;
+      position: relative;
+    }
+    #overlay {
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 3px dashed red;
+      width: 80%;
+      height: 80px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    #video-container {
+      position: relative;
+      width: 100%;
     }
     input, select, button {
-      width: 100%;
       padding: 10px;
       margin-top: 10px;
+      width: 100%;
       font-size: 16px;
     }
     ul {
@@ -35,7 +51,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>📦 Suivi des pièces utilisées</h2>
+    <h2>🔍 Reconnaissance des pièces (OCR)</h2>
 
     <label for="camion">Camion :</label>
     <select id="camion" onchange="afficherListe()">
@@ -44,30 +60,59 @@
       <option value="camion3">Camion 3</option>
     </select>
 
-    <video id="video" autoplay muted></video>
+    <div id="video-container">
+      <video id="video" autoplay muted playsinline></video>
+      <div id="overlay"></div>
+    </div>
 
-    <input type="text" id="codeBarre" placeholder="Code de la pièce scannée">
+    <button onclick="captureEtOCR()">📸 Capturer et lire</button>
+
+    <input type="text" id="codeBarre" placeholder="Code reconnu">
     <button onclick="ajouterPiece()">Ajouter</button>
 
-    <h3>📝 Liste :</h3>
+    <h3>📋 Liste :</h3>
     <ul id="listePieces"></ul>
     <button onclick="exporter()">Exporter la liste</button>
   </div>
 
   <script>
-    const codeReader = new ZXing.BrowserBarcodeReader();
-    const videoElement = document.getElementById('video');
+    const video = document.getElementById('video');
 
     // Démarrer la caméra arrière
-    codeReader.getVideoInputDevices().then(videoInputDevices => {
-      const rearCamera = videoInputDevices.find(device => device.label.toLowerCase().includes('back')) || videoInputDevices[0];
-
-      codeReader.decodeFromVideoDevice(rearCamera.deviceId, 'video', (result, err) => {
-        if (result) {
-          document.getElementById('codeBarre').value = result.text;
-        }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => {
+        video.srcObject = stream;
       });
-    });
+
+    function captureEtOCR() {
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      const w = video.videoWidth;
+      const h = video.videoHeight;
+      canvas.width = w;
+      canvas.height = h;
+      context.drawImage(video, 0, 0, w, h);
+
+      // Définir zone de lecture (centrée et rectangulaire)
+      const rectHeight = 80;
+      const rectY = h / 2 - rectHeight / 2;
+      const imageData = context.getImageData(w * 0.1, rectY, w * 0.8, rectHeight);
+
+      // Dessiner dans une autre canvas pour traitement OCR
+      const canvasCrop = document.createElement('canvas');
+      canvasCrop.width = imageData.width;
+      canvasCrop.height = imageData.height;
+      const ctxCrop = canvasCrop.getContext('2d');
+      ctxCrop.putImageData(imageData, 0, 0);
+
+      // OCR avec Tesseract.js
+      Tesseract.recognize(canvasCrop, 'eng', {
+        logger: m => console.log(m)
+      }).then(({ data: { text } }) => {
+        const result = text.trim().replace(/\s+/g, '');
+        document.getElementById('codeBarre').value = result;
+      });
+    }
 
     function ajouterPiece() {
       const camion = document.getElementById('camion').value;
@@ -100,7 +145,6 @@
       const contenu = liste.join('\n');
       const blob = new Blob([contenu], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement('a');
       a.href = url;
       a.download = `${camion}_pieces.txt`;
