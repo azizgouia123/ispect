@@ -2,11 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Suivi des pièces par camion</title>
+  <title>Scan de pièces - Camion</title>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: #f0f0f0;
       padding: 20px;
     }
     .container {
@@ -17,10 +18,14 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+    video {
+      width: 100%;
+      border-radius: 8px;
+    }
     input, select, button {
+      width: 100%;
       padding: 10px;
       margin-top: 10px;
-      width: 100%;
       font-size: 16px;
     }
     ul {
@@ -30,7 +35,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>🛠️ Suivi des pièces utilisées</h2>
+    <h2>📦 Suivi des pièces utilisées</h2>
 
     <label for="camion">Camion :</label>
     <select id="camion" onchange="afficherListe()">
@@ -39,16 +44,31 @@
       <option value="camion3">Camion 3</option>
     </select>
 
-    <input type="text" id="codeBarre" placeholder="Scanner ou entrer le code-barres">
-    <button onclick="ajouterPiece()">Ajouter la pièce</button>
+    <video id="video" autoplay muted></video>
 
-    <h3>📋 Liste des pièces :</h3>
+    <input type="text" id="codeBarre" placeholder="Code de la pièce scannée">
+    <button onclick="ajouterPiece()">Ajouter</button>
+
+    <h3>📝 Liste :</h3>
     <ul id="listePieces"></ul>
-
-    <button onclick="exporter()">📤 Exporter la liste</button>
+    <button onclick="exporter()">Exporter la liste</button>
   </div>
 
   <script>
+    const codeReader = new ZXing.BrowserBarcodeReader();
+    const videoElement = document.getElementById('video');
+
+    // Démarrer la caméra arrière
+    codeReader.getVideoInputDevices().then(videoInputDevices => {
+      const rearCamera = videoInputDevices.find(device => device.label.toLowerCase().includes('back')) || videoInputDevices[0];
+
+      codeReader.decodeFromVideoDevice(rearCamera.deviceId, 'video', (result, err) => {
+        if (result) {
+          document.getElementById('codeBarre').value = result.text;
+        }
+      });
+    });
+
     function ajouterPiece() {
       const camion = document.getElementById('camion').value;
       const code = document.getElementById('codeBarre').value.trim();
