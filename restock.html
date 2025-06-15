@@ -2,12 +2,12 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>OCR Pièces Camion</title>
+  <title>Scan Pièce - OCR précis</title>
   <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
+      background: #f1f1f1;
       padding: 20px;
     }
     .container {
@@ -27,14 +27,20 @@
     }
     #overlay {
       position: absolute;
-      border: 3px dashed red;
-      width: 80%;
-      height: 20%;
-      top: 40%;
-      left: 10%;
+      border: 2px solid red;
+      width: 60%;
+      height: 10%;
+      top: 45%;
+      left: 20%;
       z-index: 2;
       pointer-events: none;
       border-radius: 5px;
+    }
+    #preview {
+      width: 100%;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      display: none;
     }
     input, select, button {
       padding: 10px;
@@ -49,7 +55,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>🔍 Reconnaissance des pièces (OCR)</h2>
+    <h2>🔍 Scan de pièce - OCR précis</h2>
 
     <label for="camion">Camion :</label>
     <select id="camion" onchange="afficherListe()">
@@ -63,10 +69,12 @@
       <div id="overlay"></div>
     </div>
 
-    <button onclick="captureEtOCR()">📸 Capturer et lire</button>
+    <button onclick="captureEtOCR()">📸 Scanner</button>
 
     <input type="text" id="codeBarre" placeholder="Code reconnu automatiquement">
     <button onclick="ajouterPiece()">Ajouter</button>
+
+    <img id="preview" alt="Prévisualisation">
 
     <h3>📋 Liste :</h3>
     <ul id="listePieces"></ul>
@@ -76,7 +84,6 @@
   <script>
     const video = document.getElementById('video');
 
-    // Démarrer caméra arrière
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
       .then(stream => {
         video.srcObject = stream;
@@ -91,30 +98,35 @@
       canvas.height = h;
       context.drawImage(video, 0, 0, w, h);
 
-      // Zone centrée
-      const cropX = w * 0.1;
-      const cropY = h * 0.4;
-      const cropW = w * 0.8;
-      const cropH = h * 0.2;
+      // Petite bande centrale (rectangle)
+      const cropX = w * 0.2;
+      const cropY = h * 0.45;
+      const cropW = w * 0.6;
+      const cropH = h * 0.10;
 
       const imageData = context.getImageData(cropX, cropY, cropW, cropH);
-
       const canvasCrop = document.createElement('canvas');
       canvasCrop.width = cropW;
       canvasCrop.height = cropH;
       const ctxCrop = canvasCrop.getContext('2d');
       ctxCrop.putImageData(imageData, 0, 0);
 
-      // Noir et blanc pour meilleure lecture
+      // Affiche l'image capturée
+      document.getElementById('preview').src = canvasCrop.toDataURL();
+      document.getElementById('preview').style.display = "block";
+
+      // Conversion noir et blanc
       const imgData = ctxCrop.getImageData(0, 0, cropW, cropH);
       for (let i = 0; i < imgData.data.length; i += 4) {
         const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-        const bw = avg > 128 ? 255 : 0;
+        const bw = avg > 120 ? 255 : 0;
         imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
       }
       ctxCrop.putImageData(imgData, 0, 0);
 
+      // OCR Tesseract
       Tesseract.recognize(canvasCrop, 'eng', {
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
         logger: m => console.log(m)
       }).then(({ data: { text } }) => {
         const result = text.trim().replace(/[^A-Z0-9]/g, '');
@@ -126,11 +138,9 @@
       const camion = document.getElementById('camion').value;
       const code = document.getElementById('codeBarre').value.trim();
       if (!code) return;
-
       let liste = JSON.parse(localStorage.getItem(camion)) || [];
       liste.push(code);
       localStorage.setItem(camion, JSON.stringify(liste));
-
       afficherListe();
       document.getElementById('codeBarre').value = '';
     }
