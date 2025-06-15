@@ -1,0 +1,26 @@
+name: Ajouter inventaire
+
+on:
+  workflow_dispatch:  # Tu le déclenches manuellement (on peut aussi faire "push" ou "schedule")
+
+jobs:
+  upload-inventaire:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v3
+
+      - name: Configurer Git
+        run: |
+          git config --global user.email "ton.email@exemple.com"
+          git config --global user.name "TonNom"
+
+      - name: Ajouter le fichier d'inventaire
+        run: |
+          echo "Ajout manuel du fichier"
+          mkdir -p inventaire
+          echo "Contenu temporaire depuis action" > inventaire/exemple.txt
+          git add inventaire/
+          git commit -m "Ajout inventaire via GitHub Action"
+          git push https://${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
