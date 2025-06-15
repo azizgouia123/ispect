@@ -13,11 +13,6 @@
 <body>
   <h2>Ajouter une pièce à inventaire_global.xlsx</h2>
 
-  <label>🔐 Token GitHub (une seule fois) :
-    <input type="password" id="token" placeholder="Coller ici une fois" />
-    <button onclick="sauverToken()">✅ Sauver</button>
-  </label>
-
   <label>🚚 Camion : <input type="text" id="camion" value="Camion-1"></label>
   <label>🔩 Code pièce : <input type="text" id="piece"></label>
   <label>👷 Technicien : <input type="text" id="technicien" value="Technicien 1"></label>
@@ -27,37 +22,28 @@
   <pre id="log" style="margin-top: 20px; background:#f0f0f0; padding:10px;"></pre>
 
   <script>
+    const GITHUB_TOKEN = "TON_TOKEN_ICI"; // ⚠️ Token GitHub personnel ici
+
     const username = "azizgouia123";
     const repo = "ispect";
     const filepath = "inventaire_global.xlsx";
     const branch = "main";
 
-    function sauverToken() {
-      const token = document.getElementById("token").value.trim();
-      if (token) {
-        localStorage.setItem("github_token", token);
-        alert("Token sauvegardé !");
-      }
+    function log(msg) {
+      document.getElementById("log").textContent += msg + "\n";
     }
 
-    async function processus() {
-      const token = localStorage.getItem("github_token");
-      if (!token) return alert("Token manquant. Collez-le et cliquez sur ✅ Sauver.");
+    let lignes = [];
 
+    async function processus() {
       log("🔄 Téléchargement du fichier...");
-      const sha = await getFileFromGitHub(token);
+      const sha = await getFileFromGitHub(GITHUB_TOKEN);
       if (!sha) return;
 
       ajouterNouvelleLigne();
       log("📤 Envoi du fichier mis à jour...");
-      await envoyerFichier(token, sha);
+      await envoyerFichier(GITHUB_TOKEN, sha);
     }
-
-    function log(msg) {
-      document.getElementById("log").textContent += msg + "\\n";
-    }
-
-    let lignes = [];
 
     async function getFileFromGitHub(token) {
       const url = `https://api.github.com/repos/${username}/${repo}/contents/${filepath}?ref=${branch}`;
@@ -69,7 +55,7 @@
         return null;
       }
       const data = await res.json();
-      const content = atob(data.content.replace(/\\n/g, ""));
+      const content = atob(data.content.replace(/\n/g, ""));
       const binary = new Uint8Array([...content].map(c => c.charCodeAt(0)));
       const workbook = XLSX.read(binary, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
