@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Suivi des pièces par camion</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, select, button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      font-size: 16px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🛠️ Suivi des pièces utilisées</h2>
+
+    <label for="camion">Camion :</label>
+    <select id="camion" onchange="afficherListe()">
+      <option value="camion1">Camion 1</option>
+      <option value="camion2">Camion 2</option>
+      <option value="camion3">Camion 3</option>
+    </select>
+
+    <input type="text" id="codeBarre" placeholder="Scanner ou entrer le code-barres">
+    <button onclick="ajouterPiece()">Ajouter la pièce</button>
+
+    <h3>📋 Liste des pièces :</h3>
+    <ul id="listePieces"></ul>
+
+    <button onclick="exporter()">📤 Exporter la liste</button>
+  </div>
+
+  <script>
+    function ajouterPiece() {
+      const camion = document.getElementById('camion').value;
+      const code = document.getElementById('codeBarre').value.trim();
+      if (!code) return;
+
+      let liste = JSON.parse(localStorage.getItem(camion)) || [];
+      liste.push(code);
+      localStorage.setItem(camion, JSON.stringify(liste));
+
+      afficherListe();
+      document.getElementById('codeBarre').value = '';
+    }
+
+    function afficherListe() {
+      const camion = document.getElementById('camion').value;
+      const liste = JSON.parse(localStorage.getItem(camion)) || [];
+      const ul = document.getElementById('listePieces');
+      ul.innerHTML = '';
+      liste.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+    }
+
+    function exporter() {
+      const camion = document.getElementById('camion').value;
+      const liste = JSON.parse(localStorage.getItem(camion)) || [];
+      const contenu = liste.join('\n');
+      const blob = new Blob([contenu], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${camion}_pieces.txt`;
+      a.click();
+    }
+
+    window.onload = afficherListe;
+  </script>
+</body>
+</html>
