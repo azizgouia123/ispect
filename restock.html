@@ -18,25 +18,23 @@
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
+    #video-container {
+      position: relative;
+    }
     video {
       width: 100%;
       border-radius: 10px;
-      position: relative;
     }
     #overlay {
       position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
       border: 3px dashed red;
       width: 80%;
-      height: 80px;
+      height: 20%;
+      top: 40%;
+      left: 10%;
       z-index: 2;
       pointer-events: none;
-    }
-    #video-container {
-      position: relative;
-      width: 100%;
+      border-radius: 5px;
     }
     input, select, button {
       padding: 10px;
@@ -67,7 +65,7 @@
 
     <button onclick="captureEtOCR()">📸 Capturer et lire</button>
 
-    <input type="text" id="codeBarre" placeholder="Code reconnu">
+    <input type="text" id="codeBarre" placeholder="Code reconnu automatiquement">
     <button onclick="ajouterPiece()">Ajouter</button>
 
     <h3>📋 Liste :</h3>
@@ -78,7 +76,7 @@
   <script>
     const video = document.getElementById('video');
 
-    // Démarrer la caméra arrière
+    // Démarrer caméra arrière
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
       .then(stream => {
         video.srcObject = stream;
@@ -93,23 +91,33 @@
       canvas.height = h;
       context.drawImage(video, 0, 0, w, h);
 
-      // Définir zone de lecture (centrée et rectangulaire)
-      const rectHeight = 80;
-      const rectY = h / 2 - rectHeight / 2;
-      const imageData = context.getImageData(w * 0.1, rectY, w * 0.8, rectHeight);
+      // Zone centrée
+      const cropX = w * 0.1;
+      const cropY = h * 0.4;
+      const cropW = w * 0.8;
+      const cropH = h * 0.2;
 
-      // Dessiner dans une autre canvas pour traitement OCR
+      const imageData = context.getImageData(cropX, cropY, cropW, cropH);
+
       const canvasCrop = document.createElement('canvas');
-      canvasCrop.width = imageData.width;
-      canvasCrop.height = imageData.height;
+      canvasCrop.width = cropW;
+      canvasCrop.height = cropH;
       const ctxCrop = canvasCrop.getContext('2d');
       ctxCrop.putImageData(imageData, 0, 0);
 
-      // OCR avec Tesseract.js
+      // Noir et blanc pour meilleure lecture
+      const imgData = ctxCrop.getImageData(0, 0, cropW, cropH);
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+        const bw = avg > 128 ? 255 : 0;
+        imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = bw;
+      }
+      ctxCrop.putImageData(imgData, 0, 0);
+
       Tesseract.recognize(canvasCrop, 'eng', {
         logger: m => console.log(m)
       }).then(({ data: { text } }) => {
-        const result = text.trim().replace(/\s+/g, '');
+        const result = text.trim().replace(/[^A-Z0-9]/g, '');
         document.getElementById('codeBarre').value = result;
       });
     }
