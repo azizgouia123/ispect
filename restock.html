@@ -1,200 +1,131 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Scan Pièce - OCR amélioré</title>
-  <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Ajout Pièce - iSpect</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f1f1f1;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      padding: 20px;
-      max-width: 500px;
-      margin: auto;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    #video-container {
-      position: relative;
-    }
-    video {
-      width: 100%;
-      border-radius: 10px;
-    }
-    #overlay {
-      position: absolute;
-      border: 2px solid red;
-      width: 60%;
-      height: 15%;
-      top: 42.5%;
-      left: 20%;
-      z-index: 2;
-      pointer-events: none;
-      border-radius: 5px;
-    }
-    #preview {
-      width: 100%;
-      margin-top: 10px;
-      border: 1px solid #ccc;
-      display: none;
-      border-radius: 5px;
-    }
-    #ocr-result {
-      margin-top: 5px;
-      background: #222;
-      color: #0f0;
-      padding: 5px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      min-height: 1.5em;
-      border-radius: 5px;
-    }
-    input, select, button {
-      padding: 10px;
-      margin-top: 10px;
-      width: 100%;
-      font-size: 16px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    ul {
-      padding-left: 20px;
-    }
+    body { font-family: Arial; margin: 2rem; }
+    input, button { margin: 5px; padding: 8px; }
+    label { display: block; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🔍 Scan de pièce - OCR amélioré</h2>
+  <h2>Ajouter une pièce à inventaire_global.xlsx</h2>
 
-    <label for="camion">Camion :</label>
-    <select id="camion" onchange="afficherListe()">
-      <option value="camion1">Camion 1</option>
-      <option value="camion2">Camion 2</option>
-      <option value="camion3">Camion 3</option>
-    </select>
+  <label>🔐 Token GitHub (une seule fois) :
+    <input type="password" id="token" placeholder="Coller ici une fois" />
+    <button onclick="sauverToken()">✅ Sauver</button>
+  </label>
 
-    <div id="video-container">
-      <video id="video" autoplay muted playsinline></video>
-      <div id="overlay"></div>
-    </div>
+  <label>🚚 Camion : <input type="text" id="camion" value="Camion-1"></label>
+  <label>🔩 Code pièce : <input type="text" id="piece"></label>
+  <label>👷 Technicien : <input type="text" id="technicien" value="Technicien 1"></label>
 
-    <button onclick="captureEtOCR()">📸 Scanner</button>
+  <button onclick="processus()">➕ Ajouter et envoyer</button>
 
-    <input type="text" id="codeBarre" placeholder="Code reconnu automatiquement" autocomplete="off" />
-    <button onclick="ajouterPiece()">Ajouter</button>
-
-    <img id="preview" alt="Prévisualisation" />
-    <div id="ocr-result"></div>
-
-    <h3>📋 Liste :</h3>
-    <ul id="listePieces"></ul>
-    <button onclick="exporter()">Exporter la liste</button>
-  </div>
+  <pre id="log" style="margin-top: 20px; background:#f0f0f0; padding:10px;"></pre>
 
   <script>
-    const video = document.getElementById('video');
+    const username = "azizgouia123";
+    const repo = "ispect";
+    const filepath = "inventaire_global.xlsx";
+    const branch = "main";
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => alert('Erreur caméra : ' + err));
-
-    async function captureEtOCR() {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      const w = video.videoWidth;
-      const h = video.videoHeight;
-      canvas.width = w;
-      canvas.height = h;
-      context.drawImage(video, 0, 0, w, h);
-
-      const cropX = w * 0.2;
-      const cropY = h * 0.425;
-      const cropW = w * 0.6;
-      const cropH = h * 0.15;
-
-      const imageData = context.getImageData(cropX, cropY, cropW, cropH);
-      const canvasCrop = document.createElement('canvas');
-      canvasCrop.width = cropW;
-      canvasCrop.height = cropH;
-      const ctxCrop = canvasCrop.getContext('2d');
-      ctxCrop.putImageData(imageData, 0, 0);
-
-      // Contraste noir/blanc
-      const imgData = ctxCrop.getImageData(0, 0, cropW, cropH);
-      for (let i = 0; i < imgData.data.length; i += 4) {
-        const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-        const val = avg > 140 ? 255 : 0;
-        imgData.data[i] = val;
-        imgData.data[i + 1] = val;
-        imgData.data[i + 2] = val;
+    function sauverToken() {
+      const token = document.getElementById("token").value.trim();
+      if (token) {
+        localStorage.setItem("github_token", token);
+        alert("Token sauvegardé !");
       }
-      ctxCrop.putImageData(imgData, 0, 0);
+    }
 
-      // Affiche l’image capturée
-      const preview = document.getElementById('preview');
-      preview.src = canvasCrop.toDataURL();
-      preview.style.display = "block";
+    async function processus() {
+      const token = localStorage.getItem("github_token");
+      if (!token) return alert("Token manquant. Collez-le et cliquez sur ✅ Sauver.");
 
-      // OCR avec Tesseract
-      const { data: { text } } = await Tesseract.recognize(canvasCrop, 'eng', {
-        logger: m => console.log(m),
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-        tessedit_pageseg_mode: 7,
-        tessedit_ocr_engine_mode: 1
+      log("🔄 Téléchargement du fichier...");
+      const sha = await getFileFromGitHub(token);
+      if (!sha) return;
+
+      ajouterNouvelleLigne();
+      log("📤 Envoi du fichier mis à jour...");
+      await envoyerFichier(token, sha);
+    }
+
+    function log(msg) {
+      document.getElementById("log").textContent += msg + "\\n";
+    }
+
+    let lignes = [];
+
+    async function getFileFromGitHub(token) {
+      const url = `https://api.github.com/repos/${username}/${repo}/contents/${filepath}?ref=${branch}`;
+      const res = await fetch(url, {
+        headers: { Authorization: `token ${token}` }
+      });
+      if (!res.ok) {
+        log("❌ Erreur d'accès GitHub");
+        return null;
+      }
+      const data = await res.json();
+      const content = atob(data.content.replace(/\\n/g, ""));
+      const binary = new Uint8Array([...content].map(c => c.charCodeAt(0)));
+      const workbook = XLSX.read(binary, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      lignes = XLSX.utils.sheet_to_json(sheet);
+      return data.sha;
+    }
+
+    function ajouterNouvelleLigne() {
+      const camion = document.getElementById("camion").value;
+      const piece = document.getElementById("piece").value;
+      const technicien = document.getElementById("technicien").value;
+      if (!piece) return alert("Code pièce vide.");
+
+      const now = new Date();
+      lignes.push({
+        Date: now.toISOString().split("T")[0],
+        Heure: now.toTimeString().slice(0, 5),
+        Camion: camion,
+        Pièce: piece,
+        Quantité: 1,
+        Technicien: technicien
+      });
+    }
+
+    async function envoyerFichier(token, sha) {
+      const ws = XLSX.utils.json_to_sheet(lignes);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventaire");
+      const wbout = XLSX.write(wb, { type: "binary", bookType: "xlsx" });
+      const buffer = new Uint8Array(wbout.length);
+      for (let i = 0; i < wbout.length; i++) buffer[i] = wbout.charCodeAt(i) & 0xff;
+      const base64 = btoa(String.fromCharCode(...buffer));
+
+      const payload = {
+        message: "Ajout automatique de pièce",
+        content: base64,
+        sha: sha,
+        branch: branch
+      };
+
+      const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filepath}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
       });
 
-      const nettoye = text
-        .replace(/\s+/g, '')     // supprime espaces, retours, tab
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, ''); // conserve que lettres/chiffres
-
-      document.getElementById('codeBarre').value = nettoye;
-      document.getElementById('ocr-result').textContent = `Texte OCR brut : ${text.trim()}`;
+      if (res.ok) {
+        log("✅ Fichier mis à jour sur GitHub !");
+      } else {
+        const err = await res.json();
+        log("❌ Erreur : " + (err.message || "inconnue"));
+      }
     }
-
-    function ajouterPiece() {
-      const camion = document.getElementById('camion').value;
-      const code = document.getElementById('codeBarre').value.trim();
-      if (!code) return alert("Le code est vide !");
-      let liste = JSON.parse(localStorage.getItem(camion)) || [];
-      liste.push(code);
-      localStorage.setItem(camion, JSON.stringify(liste));
-      afficherListe();
-      document.getElementById('codeBarre').value = '';
-    }
-
-    function afficherListe() {
-      const camion = document.getElementById('camion').value;
-      const liste = JSON.parse(localStorage.getItem(camion)) || [];
-      const ul = document.getElementById('listePieces');
-      ul.innerHTML = '';
-      liste.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item;
-        ul.appendChild(li);
-      });
-    }
-
-    function exporter() {
-      const camion = document.getElementById('camion').value;
-      const liste = JSON.parse(localStorage.getItem(camion)) || [];
-      if(liste.length === 0) return alert("La liste est vide !");
-      const contenu = liste.join('\n');
-      const blob = new Blob([contenu], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${camion}_pieces.txt`;
-      a.click();
-    }
-
-    window.onload = afficherListe;
   </script>
 </body>
 </html>
