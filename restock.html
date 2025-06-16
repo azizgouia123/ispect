@@ -2,75 +2,77 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Test Upload vers GitHub</title>
+  <title>Ajouter des pièces à l'inventaire</title>
 </head>
 <body>
-  <h1>Envoyer un fichier Excel sur GitHub</h1>
-  <input type="file" id="fileInput" accept=".xlsx" />
-  <button onclick="uploadToGitHub()">Envoyer</button>
+  <h2>Ajouter une pièce</h2>
+  <input type="text" id="codePiece" placeholder="Entrez le code de la pièce" />
+  <button onclick="ajouterPiece()">Ajouter</button>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
-    const GITHUB_TOKEN = "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"; // ⚠️ Test uniquement
+    const GITHUB_TOKEN = "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"; // à utiliser seulement pour test
     const USERNAME = "azizgouia123";
     const REPO = "ispect";
     const BRANCH = "main";
     const FILE_PATH = "inventaire_global.xlsx";
 
-    async function uploadToGitHub() {
-      const fileInput = document.getElementById('fileInput');
-      const file = fileInput.files[0];
+    async function ajouterPiece() {
+      const code = document.getElementById("codePiece").value.trim();
+      if (!code) return alert("Code de pièce vide");
 
-      if (!file) {
-        alert("Veuillez choisir un fichier.");
+      const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FILE_PATH}`;
+
+      // Étape 1 : lire le fichier Excel actuel sur GitHub
+      const getRes = await fetch(url, {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`
+        }
+      });
+
+      if (!getRes.ok) {
+        alert("Erreur de lecture : " + getRes.statusText);
         return;
       }
 
-      const reader = new FileReader();
+      const fileData = await getRes.json();
+      const sha = fileData.sha;
+      const content = atob(fileData.content.replace(/\n/g, ""));
+      const workbook = XLSX.read(content, { type: "binary" });
 
-      reader.onload = async function () {
-        const base64Data = reader.result.split(',')[1]; // Enlève "data:application/...;base64,"
+      // Étape 2 : ajouter le code dans une nouvelle ligne (feuille 1)
+      const ws = workbook.Sheets[workbook.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      data.push([new Date().toLocaleString(), code]); // Date + code
+      const newWs = XLSX.utils.aoa_to_sheet(data);
+      const newWb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(newWb, newWs, "Feuille1");
 
-        const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FILE_PATH}`;
+      const wbout = XLSX.write(newWb, { type: "base64", bookType: "xlsx" });
 
-        // Récupère le SHA actuel du fichier
-        let sha = undefined;
-        try {
-          const res = await fetch(`${url}?ref=${BRANCH}`, {
-            headers: {
-              Authorization: `token ${GITHUB_TOKEN}`
-            }
-          });
-          const data = await res.json();
-          sha = data.sha;
-        } catch (e) {
-          console.warn("Fichier inexistant, il sera créé.");
-        }
+      // Étape 3 : envoyer le fichier mis à jour sur GitHub
+      const putRes = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: `Ajout de la pièce ${code}`,
+          content: wbout,
+          sha: sha,
+          branch: BRANCH
+        })
+      });
 
-        // Envoi du fichier
-        const res = await fetch(url, {
-          method: "PUT",
-          headers: {
-            "Authorization": `token ${GITHUB_TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: "Mise à jour automatique de inventaire_global.xlsx",
-            content: base64Data,
-            branch: BRANCH,
-            ...(sha && { sha }) // Ajoute le SHA si fichier existait
-          })
-        });
-
-        const result = await res.json();
-        if (res.ok) {
-          alert("✅ Fichier mis à jour sur GitHub !");
-        } else {
-          console.error(result);
-          alert("❌ Erreur GitHub : " + result.message);
-        }
-      };
-
-      reader.readAsDataURL(file);
+      if (putRes.ok) {
+        alert("✅ Pièce ajoutée !");
+        document.getElementById("codePiece").value = "";
+      } else {
+        const err = await putRes.json();
+        alert("❌ Erreur GitHub : " + (err.message || "inconnue"));
+        console.error(err);
+      }
     }
   </script>
 </body>
