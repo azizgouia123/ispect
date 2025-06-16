@@ -2,115 +2,75 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Ajout Pièce - iSpect</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <style>
-    body { font-family: Arial; margin: 2rem; }
-    input, button { margin: 5px; padding: 8px; }
-    label { display: block; margin-top: 10px; }
-  </style>
+  <title>Test Upload vers GitHub</title>
 </head>
 <body>
-  <h2>Ajouter une pièce à inventaire_global.xlsx</h2>
-
-  <label>🚚 Camion : <input type="text" id="camion" value="Camion-1"></label>
-  <label>🔩 Code pièce : <input type="text" id="piece"></label>
-  <label>👷 Technicien : <input type="text" id="technicien" value="Technicien 1"></label>
-
-  <button onclick="processus()">➕ Ajouter et envoyer</button>
-
-  <pre id="log" style="margin-top: 20px; background:#f0f0f0; padding:10px;"></pre>
+  <h1>Envoyer un fichier Excel sur GitHub</h1>
+  <input type="file" id="fileInput" accept=".xlsx" />
+  <button onclick="uploadToGitHub()">Envoyer</button>
 
   <script>
-    const GITHUB_TOKEN = "TON_TOKEN_ICI"; // ⚠️ Token GitHub personnel ici
+    const GITHUB_TOKEN = "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"; // ⚠️ Test uniquement
+    const USERNAME = "azizgouia123";
+    const REPO = "ispect";
+    const BRANCH = "main";
+    const FILE_PATH = "inventaire_global.xlsx";
 
-    const username = "azizgouia123";
-    const repo = "ispect";
-    const filepath = "inventaire_global.xlsx";
-    const branch = "main";
+    async function uploadToGitHub() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
 
-    function log(msg) {
-      document.getElementById("log").textContent += msg + "\n";
-    }
-
-    let lignes = [];
-
-    async function processus() {
-      log("🔄 Téléchargement du fichier...");
-      const sha = await getFileFromGitHub(GITHUB_TOKEN);
-      if (!sha) return;
-
-      ajouterNouvelleLigne();
-      log("📤 Envoi du fichier mis à jour...");
-      await envoyerFichier(GITHUB_TOKEN, sha);
-    }
-
-    async function getFileFromGitHub(token) {
-      const url = `https://api.github.com/repos/${username}/${repo}/contents/${filepath}?ref=${branch}`;
-      const res = await fetch(url, {
-        headers: { Authorization: `token ${token}` }
-      });
-      if (!res.ok) {
-        log("❌ Erreur d'accès GitHub");
-        return null;
+      if (!file) {
+        alert("Veuillez choisir un fichier.");
+        return;
       }
-      const data = await res.json();
-      const content = atob(data.content.replace(/\n/g, ""));
-      const binary = new Uint8Array([...content].map(c => c.charCodeAt(0)));
-      const workbook = XLSX.read(binary, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      lignes = XLSX.utils.sheet_to_json(sheet);
-      return data.sha;
-    }
 
-    function ajouterNouvelleLigne() {
-      const camion = document.getElementById("camion").value;
-      const piece = document.getElementById("piece").value;
-      const technicien = document.getElementById("technicien").value;
-      if (!piece) return alert("Code pièce vide.");
+      const reader = new FileReader();
 
-      const now = new Date();
-      lignes.push({
-        Date: now.toISOString().split("T")[0],
-        Heure: now.toTimeString().slice(0, 5),
-        Camion: camion,
-        Pièce: piece,
-        Quantité: 1,
-        Technicien: technicien
-      });
-    }
+      reader.onload = async function () {
+        const base64Data = reader.result.split(',')[1]; // Enlève "data:application/...;base64,"
 
-    async function envoyerFichier(token, sha) {
-      const ws = XLSX.utils.json_to_sheet(lignes);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Inventaire");
-      const wbout = XLSX.write(wb, { type: "binary", bookType: "xlsx" });
-      const buffer = new Uint8Array(wbout.length);
-      for (let i = 0; i < wbout.length; i++) buffer[i] = wbout.charCodeAt(i) & 0xff;
-      const base64 = btoa(String.fromCharCode(...buffer));
+        const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FILE_PATH}`;
 
-      const payload = {
-        message: "Ajout automatique de pièce",
-        content: base64,
-        sha: sha,
-        branch: branch
+        // Récupère le SHA actuel du fichier
+        let sha = undefined;
+        try {
+          const res = await fetch(`${url}?ref=${BRANCH}`, {
+            headers: {
+              Authorization: `token ${GITHUB_TOKEN}`
+            }
+          });
+          const data = await res.json();
+          sha = data.sha;
+        } catch (e) {
+          console.warn("Fichier inexistant, il sera créé.");
+        }
+
+        // Envoi du fichier
+        const res = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Authorization": `token ${GITHUB_TOKEN}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: "Mise à jour automatique de inventaire_global.xlsx",
+            content: base64Data,
+            branch: BRANCH,
+            ...(sha && { sha }) // Ajoute le SHA si fichier existait
+          })
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert("✅ Fichier mis à jour sur GitHub !");
+        } else {
+          console.error(result);
+          alert("❌ Erreur GitHub : " + result.message);
+        }
       };
 
-      const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filepath}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `token ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        log("✅ Fichier mis à jour sur GitHub !");
-      } else {
-        const err = await res.json();
-        log("❌ Erreur : " + (err.message || "inconnue"));
-      }
+      reader.readAsDataURL(file);
     }
   </script>
 </body>
