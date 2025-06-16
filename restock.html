@@ -21,7 +21,7 @@
       const code = document.getElementById("codePiece").value.trim();
       if (!code) return alert("Code de pièce vide");
 
-      const url = `https://api.github.com/repos/${USERNAME}/${REPO}/contents/${FILE_PATH}`;
+      const url = `https://api.github.com/repos/${USERNAME}/${REPO}/${FILE_PATH}`;
 
       // Étape 1 : lire le fichier Excel actuel sur GitHub
       const getRes = await fetch(url, {
