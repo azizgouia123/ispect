@@ -2,49 +2,122 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gestion Inventaire Pièces</title>
   <style>
+    :root {
+      --primary-color: #28a745;
+      --primary-hover: #218838;
+      --error-color: #dc3545;
+      --border-color: #ced4da;
+      --shadow: 0 0 12px rgba(0,0,0,0.1);
+    }
+    
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Arial, sans-serif;
       background: #f5f5f5;
-      padding: 2em;
+      padding: 1em;
       max-width: 600px;
       margin: auto;
+      line-height: 1.6;
     }
+    
     .container {
       background: white;
-      padding: 2em;
-      border-radius: 10px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.1);
-      margin-bottom: 2em;
+      padding: 1.5em;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin-bottom: 1.5em;
     }
+    
+    h2 {
+      color: #333;
+      margin-top: 0;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .form-group {
+      margin-bottom: 1.2em;
+    }
+    
+    label {
+      font-weight: 600;
+      margin-bottom: 0.4em;
+      display: block;
+      color: #495057;
+    }
+    
     input, select, button {
       font-size: 1em;
       padding: 0.7em;
-      margin-bottom: 1em;
       width: 100%;
       box-sizing: border-box;
-      border: 1px solid #ccc;
+      border: 1px solid var(--border-color);
       border-radius: 5px;
+      transition: border-color 0.3s;
     }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+    }
+    
     button {
-      background-color: #28a745;
+      background-color: var(--primary-color);
       color: white;
       border: none;
       cursor: pointer;
       font-weight: bold;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.3s;
+      margin-top: 0.5em;
+      padding: 0.8em;
     }
+    
     button:hover {
-      background-color: #218838;
+      background-color: var(--primary-hover);
     }
-    label {
-      font-weight: bold;
-      margin-bottom: 0.3em;
-      display: block;
+    
+    button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
     }
+    
     #dates-personnalisees {
       display: none;
+      background: #f8f9fa;
+      padding: 1em;
+      border-radius: 5px;
+      margin-top: 1em;
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error-message {
+      color: var(--error-color);
+      font-size: 0.9em;
+      margin-top: 0.3em;
+    }
+    
+    .success-message {
+      color: var(--primary-color);
+      font-weight: bold;
+      margin-top: 1em;
+      text-align: center;
     }
   </style>
 </head>
@@ -52,104 +125,277 @@
 
   <div class="container">
     <h2>Ajouter une pièce</h2>
-    <input id="camion" placeholder="Camion" />
-    <input id="piece" placeholder="Code de la pièce" />
-    <input id="description" placeholder="Description" />
-    <button onclick="ajouter()">Ajouter</button>
+    
+    <div class="form-group">
+      <label for="camion">Camion</label>
+      <input id="camion" placeholder="Ex: CAM-001" required />
+      <div id="camion-error" class="error-message"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="piece">Code de la pièce</label>
+      <input id="piece" placeholder="Ex: PCE-2023-001" required />
+      <div id="piece-error" class="error-message"></div>
+    </div>
+    
+    <div class="form-group">
+      <label for="description">Description</label>
+      <input id="description" placeholder="Ex: Courroie de transmission" required />
+      <div id="description-error" class="error-message"></div>
+    </div>
+    
+    <button id="ajouter-btn" onclick="ajouter()">
+      <span id="ajouter-text">Ajouter</span>
+      <span id="ajouter-loading" class="loading" style="display:none;"></span>
+    </button>
+    
+    <div id="success-message" class="success-message" style="display:none;"></div>
   </div>
 
   <div class="container">
     <h2>Télécharger rapport</h2>
 
-    <label for="periode">Choisir la période :</label>
-    <select id="periode" onchange="toggleDatesPersonnalisees()">
-      <option value="semaine">Semaine dernière</option>
-      <option value="2semaines">2 dernières semaines</option>
-      <option value="mois">1 mois</option>
-      <option value="custom">Personnalisé</option>
-    </select>
-
-    <div id="dates-personnalisees">
-      <label>Date début :</label>
-      <input type="date" id="dateDebut" />
-      <label>Date fin :</label>
-      <input type="date" id="dateFin" />
+    <div class="form-group">
+      <label for="periode">Période :</label>
+      <select id="periode" onchange="toggleDatesPersonnalisees()">
+        <option value="semaine">Semaine dernière</option>
+        <option value="2semaines">2 dernières semaines</option>
+        <option value="mois">1 mois</option>
+        <option value="custom">Personnalisé</option>
+      </select>
     </div>
 
-    <button onclick="telechargerRapport()">Télécharger CSV</button>
+    <div id="dates-personnalisees">
+      <div class="form-group">
+        <label for="dateDebut">Date début :</label>
+        <input type="date" id="dateDebut" />
+        <div id="dateDebut-error" class="error-message"></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="dateFin">Date fin :</label>
+        <input type="date" id="dateFin" />
+        <div id="dateFin-error" class="error-message"></div>
+      </div>
+    </div>
+
+    <button id="rapport-btn" onclick="telechargerRapport()">
+      <span id="rapport-text">Télécharger CSV</span>
+      <span id="rapport-loading" class="loading" style="display:none;"></span>
+    </button>
   </div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
+    let lastAddedItem = null;
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set default dates for custom range
+      const today = new Date();
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(today.getDate() - 7);
+      
+      document.getElementById('dateDebut').valueAsDate = oneWeekAgo;
+      document.getElementById('dateFin').valueAsDate = today;
+      
+      // Focus on first field
+      document.getElementById('camion').focus();
+      
+      // Add enter key support
+      document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            if (this.id === 'description') {
+              ajouter();
+            }
+          }
+        });
+      });
+    });
+
+    function showLoading(buttonId, show) {
+      const btn = document.getElementById(buttonId);
+      const text = document.getElementById(`${buttonId.replace('-btn', '-text')}`);
+      const loading = document.getElementById(`${buttonId.replace('-btn', '-loading')}`);
+      
+      if (show) {
+        btn.disabled = true;
+        text.style.display = 'none';
+        loading.style.display = 'inline-block';
+      } else {
+        btn.disabled = false;
+        text.style.display = 'inline';
+        loading.style.display = 'none';
+      }
+    }
+
+    function showError(fieldId, message) {
+      const errorElement = document.getElementById(`${fieldId}-error`);
+      errorElement.textContent = message;
+      document.getElementById(fieldId).classList.add('error');
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.error-message').forEach(el => {
+        el.textContent = '';
+      });
+      document.querySelectorAll('input').forEach(input => {
+        input.classList.remove('error');
+      });
+    }
+
+    function validateForm() {
+      clearErrors();
+      let isValid = true;
+
+      const camion = document.getElementById('camion').value.trim();
+      const piece = document.getElementById('piece').value.trim();
+      const description = document.getElementById('description').value.trim();
+
+      if (!camion) {
+        showError('camion', 'Veuillez saisir un numéro de camion');
+        isValid = false;
+      }
+
+      if (!piece) {
+        showError('piece', 'Veuillez saisir un code pièce');
+        isValid = false;
+      }
+
+      if (!description) {
+        showError('description', 'Veuillez saisir une description');
+        isValid = false;
+      }
+
+      return isValid;
+    }
 
     function ajouter() {
-      const camion = document.getElementById("camion").value.trim();
-      const piece = document.getElementById("piece").value.trim();
-      const description = document.getElementById("description").value.trim();
+      if (!validateForm()) return;
 
-      if (!camion || !piece || !description) {
-        alert("Veuillez remplir tous les champs.");
-        return;
-      }
+      const camion = document.getElementById('camion').value.trim();
+      const piece = document.getElementById('piece').value.trim();
+      const description = document.getElementById('description').value.trim();
+
+      showLoading('ajouter-btn', true);
 
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ camion, piece, description })
-      }).then(() => {
-        alert("✅ Pièce envoyée (aucune réponse affichée à cause de CORS)");
-        document.getElementById("camion").value = "";
-        document.getElementById("piece").value = "";
-        document.getElementById("description").value = "";
-      }).catch(err => {
-        alert("Erreur : " + err);
+        body: JSON.stringify({ 
+          camion, 
+          piece, 
+          description,
+          action: "add-item"
+        })
+      })
+      .then(() => {
+        lastAddedItem = { camion, piece, description };
+        document.getElementById('success-message').textContent = '✅ Pièce ajoutée avec succès';
+        document.getElementById('success-message').style.display = 'block';
+        
+        // Clear form
+        document.getElementById('camion').value = '';
+        document.getElementById('piece').value = '';
+        document.getElementById('description').value = '';
+        
+        // Focus back to first field
+        document.getElementById('camion').focus();
+        
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          document.getElementById('success-message').style.display = 'none';
+        }, 3000);
+      })
+      .catch(err => {
+        document.getElementById('success-message').textContent = '❌ Erreur lors de l\'ajout';
+        document.getElementById('success-message').style.display = 'block';
+        console.error("Erreur:", err);
+      })
+      .finally(() => {
+        showLoading('ajouter-btn', false);
       });
     }
 
     function toggleDatesPersonnalisees() {
-      const select = document.getElementById("periode");
-      const personnalisees = document.getElementById("dates-personnalisees");
-      personnalisees.style.display = (select.value === "custom") ? "block" : "none";
+      const select = document.getElementById('periode');
+      const personnalisees = document.getElementById('dates-personnalisees');
+      personnalisees.style.display = (select.value === 'custom') ? 'block' : 'none';
     }
 
-    function parseDateFr(str) {
-      if (!str.includes("/")) return new Date(str);
-      const [day, month, year] = str.split("/");
-      return new Date(`${year}-${month}-${day}`);
+    function validateDates() {
+      clearErrors();
+      let isValid = true;
+
+      const periode = document.getElementById('periode').value;
+      
+      if (periode === 'custom') {
+        const dateDebut = document.getElementById('dateDebut').value;
+        const dateFin = document.getElementById('dateFin').value;
+
+        if (!dateDebut) {
+          showError('dateDebut', 'Veuillez sélectionner une date de début');
+          isValid = false;
+        }
+
+        if (!dateFin) {
+          showError('dateFin', 'Veuillez sélectionner une date de fin');
+          isValid = false;
+        }
+
+        if (dateDebut && dateFin && new Date(dateDebut) > new Date(dateFin)) {
+          showError('dateFin', 'La date de fin doit être postérieure à la date de début');
+          isValid = false;
+        }
+      }
+
+      return isValid;
     }
 
     async function telechargerRapport() {
+      if (!validateDates()) return;
+
+      showLoading('rapport-btn', true);
+
       try {
-        const res = await fetch(SCRIPT_URL);
-        const texte = await res.text();
-
-        const lignes = texte.trim().split("\n").map(l => l.split(","));
-        const header = lignes[0];
-
         const { debut, fin } = getDatesFiltre();
         if (!debut || !fin) {
           alert("Dates invalides");
           return;
         }
 
-        const lignesFiltrees = lignes.filter((ligne, i) => {
-          if (i === 0) return true;
-          const dateObj = parseDateFr(ligne[0]);
-          if (isNaN(dateObj)) return false;
-          return dateObj >= debut && dateObj <= fin;
+        const params = new URLSearchParams({
+          action: "get-report",
+          debut: formatDate(debut),
+          fin: formatDate(fin)
         });
 
-        const csvFiltree = lignesFiltrees.map(l => l.join(",")).join("\n");
-        downloadCSV(csvFiltree, `rapport_${formatDate(debut)}_à_${formatDate(fin)}.csv`);
+        const res = await fetch(`${SCRIPT_URL}?${params}`);
+        
+        if (!res.ok) {
+          throw new Error(`Erreur HTTP: ${res.status}`);
+        }
+
+        const csv = await res.text();
+        
+        if (csv.includes('Error')) {
+          throw new Error(csv);
+        }
+
+        downloadCSV(csv, `rapport_pieces_${formatDate(debut)}_${formatDate(fin)}.csv`);
 
       } catch (err) {
+        console.error("Erreur:", err);
         alert("Erreur lors du téléchargement : " + err.message);
+      } finally {
+        showLoading('rapport-btn', false);
       }
     }
 
     function getDatesFiltre() {
-      const periode = document.getElementById("periode").value;
+      const periode = document.getElementById('periode').value;
       const now = new Date();
       let debut = new Date();
       let fin = new Date();
@@ -166,31 +412,39 @@
           debut.setMonth(now.getMonth() - 1);
           break;
         case "custom":
-          const dDebut = document.getElementById("dateDebut").value;
-          const dFin = document.getElementById("dateFin").value;
+          const dDebut = document.getElementById('dateDebut').value;
+          const dFin = document.getElementById('dateFin').value;
           if (!dDebut || !dFin) return {};
           debut = new Date(dDebut);
           fin = new Date(dFin);
           fin.setHours(23, 59, 59);
           break;
       }
+      
+      // Adjust for timezone offset
+      debut.setMinutes(debut.getMinutes() - debut.getTimezoneOffset());
+      fin.setMinutes(fin.getMinutes() - fin.getTimezoneOffset());
+      
       return { debut, fin };
     }
 
     function formatDate(d) {
-      return d.toISOString().slice(0, 10);
+      return d.toISOString().split('T')[0];
     }
 
     function downloadCSV(text, filename) {
-      const blob = new Blob([text], { type: "text/csv" });
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
       a.download = filename;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
     }
   </script>
-
 </body>
 </html>
