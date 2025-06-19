@@ -2,17 +2,99 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Ajouter une pièce (no-cors)</title>
+  <title>Gestion Inventaire Pièces</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
+    }
+    .container {
+      background: white;
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      margin-bottom: 2em;
+    }
+    input, select, button {
+      font-size: 1em;
+      padding: 0.7em;
+      margin-bottom: 1em;
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 0.3em;
+      display: block;
+    }
+    #dates-personnalisees {
+      display: none;
+    }
+    .inline-inputs {
+      display: flex;
+      gap: 1em;
+    }
+    .inline-inputs input {
+      flex: 1;
+      margin-bottom: 1em;
+    }
+  </style>
 </head>
 <body>
-  <h2>Ajouter une pièce</h2>
-  <input id="camion" placeholder="Camion" />
-  <input id="piece" placeholder="Code de la pièce" />
-  <input id="description" placeholder="Description" />
-  <button onclick="ajouter()">Ajouter</button>
+  <div class="container">
+    <h2>Ajouter une pièce</h2>
+    <input id="camion" placeholder="Camion" />
+    <input id="piece" placeholder="Code de la pièce" />
+    <input id="description" placeholder="Description" />
+    <button onclick="ajouter()">Ajouter</button>
+  </div>
+
+  <div class="container">
+    <h2>Télécharger rapport</h2>
+
+    <label for="periode">Choisir la période :</label>
+    <select id="periode" onchange="toggleDatesPersonnalisees()">
+      <option value="semaine">Semaine dernière</option>
+      <option value="2semaines">2 dernières semaines</option>
+      <option value="mois">1 mois</option>
+      <option value="custom">Personnalisé</option>
+    </select>
+
+    <div id="dates-personnalisees">
+      <label>Date début :</label>
+      <input type="date" id="dateDebut" />
+      <label>Date fin :</label>
+      <input type="date" id="dateFin" />
+    </div>
+
+    <button onclick="telechargerRapport()">Télécharger CSV</button>
+  </div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
+
+    // ID et gid de ta Google Sheet
+    // Mets ici l'ID de ta Google Sheet (extrait de l'URL)
+    const GOOGLE_SHEET_ID = "ID_DE_TA_FEUILLE_ICI"; 
+
+    // L'onglet où sont les données, par défaut c'est le premier onglet avec gid=0
+    const GID = 0;
 
     function ajouter() {
       const camion = document.getElementById("camion").value.trim();
@@ -27,9 +109,7 @@
       fetch(SCRIPT_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ camion, piece, description })
       }).then(() => {
         alert("✅ Pièce envoyée. (Pas de confirmation possible à cause de CORS)");
@@ -39,6 +119,116 @@
       }).catch(err => {
         alert("Erreur lors de l'envoi : " + err);
       });
+    }
+
+    function toggleDatesPersonnalisees() {
+      const select = document.getElementById("periode");
+      const personnalisees = document.getElementById("dates-personnalisees");
+      if (select.value === "custom") {
+        personnalisees.style.display = "block";
+      } else {
+        personnalisees.style.display = "none";
+      }
+    }
+
+    async function telechargerRapport() {
+      // Vérifier si Google Sheet ID est renseigné
+      if(GOOGLE_SHEET_ID === "ID_DE_TA_FEUILLE_ICI"){
+        alert("⚠️ Mets l'ID de ta Google Sheet dans la variable GOOGLE_SHEET_ID dans le script !");
+        return;
+      }
+
+      // Construire l'URL CSV publique d'export
+      const urlCSV = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${GID}`;
+
+      try {
+        const response = await fetch(urlCSV);
+        if(!response.ok) throw new Error("Erreur chargement Google Sheet");
+
+        const csvText = await response.text();
+        const lignes = csvText.trim().split("\n").map(l => l.split(","));
+
+        // En-tête
+        const header = lignes[0];
+
+        // Récupérer dates de filtre
+        const { debut, fin } = getDatesFiltre();
+        if (!debut || !fin) {
+          alert("Dates invalides");
+          return;
+        }
+
+        // Filtrer lignes par date (colonne Date = index 0)
+        const lignesFiltrees = lignes.filter((ligne,i) => {
+          if(i === 0) return true; // garder l'entête
+          const dateCell = ligne[0];
+          const dateObj = new Date(dateCell);
+          return dateObj >= debut && dateObj <= fin;
+        });
+
+        // Générer CSV filtré
+        const csvFiltree = lignesFiltrees.map(l => l.join(",")).join("\n");
+
+        // Télécharger fichier
+        downloadCSV(csvFiltree, `rapport_${formatDate(debut)}_à_${formatDate(fin)}.csv`);
+
+      } catch(err) {
+        alert("Erreur : " + err.message);
+      }
+    }
+
+    function getDatesFiltre() {
+      const periode = document.getElementById("periode").value;
+      const now = new Date();
+
+      let debut, fin;
+
+      fin = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59);
+
+      switch(periode) {
+        case "semaine":
+          // Semaine dernière = 7 jours avant hier
+          debut = new Date(fin);
+          debut.setDate(debut.getDate() - 7);
+          break;
+
+        case "2semaines":
+          debut = new Date(fin);
+          debut.setDate(debut.getDate() - 14);
+          break;
+
+        case "mois":
+          debut = new Date(fin);
+          debut.setMonth(debut.getMonth() - 1);
+          break;
+
+        case "custom":
+          const dDebut = document.getElementById("dateDebut").value;
+          const dFin = document.getElementById("dateFin").value;
+          if(!dDebut || !dFin) return {};
+          debut = new Date(dDebut);
+          fin = new Date(dFin);
+          fin.setHours(23,59,59);
+          break;
+      }
+      return { debut, fin };
+    }
+
+    function downloadCSV(text, filename) {
+      const blob = new Blob([text], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function formatDate(d) {
+      return d.toISOString().slice(0,10);
     }
   </script>
 </body>
