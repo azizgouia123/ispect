@@ -46,17 +46,10 @@
     #dates-personnalisees {
       display: none;
     }
-    .inline-inputs {
-      display: flex;
-      gap: 1em;
-    }
-    .inline-inputs input {
-      flex: 1;
-      margin-bottom: 1em;
-    }
   </style>
 </head>
 <body>
+
   <div class="container">
     <h2>Ajouter une pièce</h2>
     <input id="camion" placeholder="Camion" />
@@ -87,10 +80,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
-
-    const GOOGLE_SHEET_ID = "12gdmHIP7c_3oE0EXxm21ax5Of4mljzo0RCxGAfmguvw";
-    const GID = 0;
+    const SCRIPT_URL = "https://script.google.com/macros/s/TON_SCRIPT_ID/exec"; // ← à remplacer
 
     function ajouter() {
       const camion = document.getElementById("camion").value.trim();
@@ -108,35 +98,33 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ camion, piece, description })
       }).then(() => {
-        alert("✅ Pièce envoyée. (Pas de confirmation possible à cause de CORS)");
+        alert("✅ Pièce envoyée (aucune réponse affichée à cause de CORS)");
         document.getElementById("camion").value = "";
         document.getElementById("piece").value = "";
         document.getElementById("description").value = "";
       }).catch(err => {
-        alert("Erreur lors de l'envoi : " + err);
+        alert("Erreur : " + err);
       });
     }
 
     function toggleDatesPersonnalisees() {
       const select = document.getElementById("periode");
       const personnalisees = document.getElementById("dates-personnalisees");
-      if (select.value === "custom") {
-        personnalisees.style.display = "block";
-      } else {
-        personnalisees.style.display = "none";
-      }
+      personnalisees.style.display = (select.value === "custom") ? "block" : "none";
+    }
+
+    function parseDateFr(str) {
+      if (!str.includes("/")) return new Date(str); // supporte aussi les dates ISO
+      const [day, month, year] = str.split("/");
+      return new Date(`${year}-${month}-${day}`);
     }
 
     async function telechargerRapport() {
-      const urlCSV = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${GID}`;
-
       try {
-        const response = await fetch(urlCSV);
-        if (!response.ok) throw new Error("Erreur chargement Google Sheet");
+        const res = await fetch(SCRIPT_URL);
+        const texte = await res.text();
 
-        const csvText = await response.text();
-        const lignes = csvText.trim().split("\n").map(l => l.split(","));
-
+        const lignes = texte.trim().split("\n").map(l => l.split(","));
         const header = lignes[0];
 
         const { debut, fin } = getDatesFiltre();
@@ -147,38 +135,35 @@
 
         const lignesFiltrees = lignes.filter((ligne, i) => {
           if (i === 0) return true;
-          const dateCell = ligne[0];
-          const dateObj = new Date(dateCell);
+          const dateObj = parseDateFr(ligne[0]);
+          if (isNaN(dateObj)) return false;
           return dateObj >= debut && dateObj <= fin;
         });
 
         const csvFiltree = lignesFiltrees.map(l => l.join(",")).join("\n");
-
         downloadCSV(csvFiltree, `rapport_${formatDate(debut)}_à_${formatDate(fin)}.csv`);
+
       } catch (err) {
-        alert("Erreur : " + err.message);
+        alert("Erreur lors du téléchargement : " + err.message);
       }
     }
 
     function getDatesFiltre() {
       const periode = document.getElementById("periode").value;
       const now = new Date();
-
-      let debut, fin;
-      fin = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      let debut = new Date();
+      let fin = new Date();
+      fin.setHours(23, 59, 59);
 
       switch (periode) {
         case "semaine":
-          debut = new Date(fin);
-          debut.setDate(debut.getDate() - 7);
+          debut.setDate(now.getDate() - 7);
           break;
         case "2semaines":
-          debut = new Date(fin);
-          debut.setDate(debut.getDate() - 14);
+          debut.setDate(now.getDate() - 14);
           break;
         case "mois":
-          debut = new Date(fin);
-          debut.setMonth(debut.getMonth() - 1);
+          debut.setMonth(now.getMonth() - 1);
           break;
         case "custom":
           const dDebut = document.getElementById("dateDebut").value;
@@ -192,22 +177,20 @@
       return { debut, fin };
     }
 
+    function formatDate(d) {
+      return d.toISOString().slice(0, 10);
+    }
+
     function downloadCSV(text, filename) {
       const blob = new Blob([text], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
-
-    function formatDate(d) {
-      return d.toISOString().slice(0, 10);
-    }
   </script>
+
 </body>
 </html>
