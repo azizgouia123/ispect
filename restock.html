@@ -186,6 +186,7 @@
   </div>
 
   <script>
+    // URL du script Google Apps (mise à jour)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
 
     // Initialisation
@@ -274,11 +275,11 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({  
             action: "add-item",
-            camion, 
-            piece, 
-            description 
+            camion,  
+            piece,  
+            description  
           })
         });
 
