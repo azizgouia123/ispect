@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestion Inventaire Pièces</title>
   <style>
     :root {
@@ -128,19 +128,19 @@
     
     <div class="form-group">
       <label for="camion">Camion</label>
-      <input id="camion" placeholder="Ex: CAM-001" required />
+      <input id="camion" placeholder="Ex: CAM-001" required>
       <div id="camion-error" class="error-message"></div>
     </div>
     
     <div class="form-group">
       <label for="piece">Code de la pièce</label>
-      <input id="piece" placeholder="Ex: PCE-2023-001" required />
+      <input id="piece" placeholder="Ex: PCE-2023-001" required>
       <div id="piece-error" class="error-message"></div>
     </div>
     
     <div class="form-group">
       <label for="description">Description</label>
-      <input id="description" placeholder="Ex: Courroie de transmission" required />
+      <input id="description" placeholder="Ex: Courroie de transmission" required>
       <div id="description-error" class="error-message"></div>
     </div>
     
@@ -168,13 +168,13 @@
     <div id="dates-personnalisees">
       <div class="form-group">
         <label for="dateDebut">Date début :</label>
-        <input type="date" id="dateDebut" />
+        <input type="date" id="dateDebut">
         <div id="dateDebut-error" class="error-message"></div>
       </div>
       
       <div class="form-group">
         <label for="dateFin">Date fin :</label>
-        <input type="date" id="dateFin" />
+        <input type="date" id="dateFin">
         <div id="dateFin-error" class="error-message"></div>
       </div>
     </div>
@@ -187,7 +187,6 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
-    let lastAddedItem = null;
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', function() {
@@ -201,17 +200,6 @@
       
       // Focus on first field
       document.getElementById('camion').focus();
-      
-      // Add enter key support
-      document.querySelectorAll('input').forEach(input => {
-        input.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') {
-            if (this.id === 'description') {
-              ajouter();
-            }
-          }
-        });
-      });
     });
 
     function showLoading(buttonId, show) {
@@ -271,7 +259,7 @@
       return isValid;
     }
 
-    function ajouter() {
+    async function ajouter() {
       if (!validateForm()) return;
 
       const camion = document.getElementById('camion').value.trim();
@@ -280,43 +268,48 @@
 
       showLoading('ajouter-btn', true);
 
-      fetch(SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          camion, 
-          piece, 
-          description,
-          action: "add-item"
-        })
-      })
-      .then(() => {
-        lastAddedItem = { camion, piece, description };
-        document.getElementById('success-message').textContent = '✅ Pièce ajoutée avec succès';
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            action: "add-item",
+            camion, 
+            piece, 
+            description 
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.status === "success") {
+          document.getElementById('success-message').textContent = '✅ ' + result.message;
+          document.getElementById('success-message').style.display = 'block';
+          
+          // Clear form
+          document.getElementById('camion').value = '';
+          document.getElementById('piece').value = '';
+          document.getElementById('description').value = '';
+          
+          // Focus back to first field
+          document.getElementById('camion').focus();
+        } else {
+          throw new Error(result.message || 'Erreur inconnue');
+        }
+      } catch (err) {
+        document.getElementById('success-message').textContent = '❌ ' + err.message;
         document.getElementById('success-message').style.display = 'block';
-        
-        // Clear form
-        document.getElementById('camion').value = '';
-        document.getElementById('piece').value = '';
-        document.getElementById('description').value = '';
-        
-        // Focus back to first field
-        document.getElementById('camion').focus();
+        console.error("Erreur:", err);
+      } finally {
+        showLoading('ajouter-btn', false);
         
         // Hide success message after 3 seconds
         setTimeout(() => {
           document.getElementById('success-message').style.display = 'none';
         }, 3000);
-      })
-      .catch(err => {
-        document.getElementById('success-message').textContent = '❌ Erreur lors de l\'ajout';
-        document.getElementById('success-message').style.display = 'block';
-        console.error("Erreur:", err);
-      })
-      .finally(() => {
-        showLoading('ajouter-btn', false);
-      });
+      }
     }
 
     function toggleDatesPersonnalisees() {
@@ -352,46 +345,6 @@
       }
 
       return isValid;
-    }
-
-    async function telechargerRapport() {
-      if (!validateDates()) return;
-
-      showLoading('rapport-btn', true);
-
-      try {
-        const { debut, fin } = getDatesFiltre();
-        if (!debut || !fin) {
-          alert("Dates invalides");
-          return;
-        }
-
-        const params = new URLSearchParams({
-          action: "get-report",
-          debut: formatDate(debut),
-          fin: formatDate(fin)
-        });
-
-        const res = await fetch(`${SCRIPT_URL}?${params}`);
-        
-        if (!res.ok) {
-          throw new Error(`Erreur HTTP: ${res.status}`);
-        }
-
-        const csv = await res.text();
-        
-        if (csv.includes('Error')) {
-          throw new Error(csv);
-        }
-
-        downloadCSV(csv, `rapport_pieces_${formatDate(debut)}_${formatDate(fin)}.csv`);
-
-      } catch (err) {
-        console.error("Erreur:", err);
-        alert("Erreur lors du téléchargement : " + err.message);
-      } finally {
-        showLoading('rapport-btn', false);
-      }
     }
 
     function getDatesFiltre() {
@@ -444,6 +397,42 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, 100);
+    }
+
+    async function telechargerRapport() {
+      if (!validateDates()) return;
+
+      showLoading('rapport-btn', true);
+
+      try {
+        const { debut, fin } = getDatesFiltre();
+        if (!debut || !fin) {
+          alert("Dates invalides");
+          return;
+        }
+
+        const params = new URLSearchParams({
+          action: "get-report",
+          debut: formatDate(debut),
+          fin: formatDate(fin)
+        });
+
+        const response = await fetch(`${SCRIPT_URL}?${params}`);
+        const csvData = await response.text();
+        
+        if (csvData.includes('Error') || csvData.includes('status')) {
+          const errorData = JSON.parse(csvData);
+          throw new Error(errorData.message || 'Erreur lors de la génération du rapport');
+        }
+
+        downloadCSV(csvData, `rapport_pieces_${formatDate(debut)}_${formatDate(fin)}.csv`);
+
+      } catch (err) {
+        console.error("Erreur:", err);
+        alert("Erreur lors du téléchargement : " + err.message);
+      } finally {
+        showLoading('rapport-btn', false);
+      }
     }
   </script>
 </body>
