@@ -89,11 +89,7 @@
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
 
-    // ID et gid de ta Google Sheet
-    // Mets ici l'ID de ta Google Sheet (extrait de l'URL)
-    const GOOGLE_SHEET_ID = "ID_DE_TA_FEUILLE_ICI"; 
-
-    // L'onglet où sont les données, par défaut c'est le premier onglet avec gid=0
+    const GOOGLE_SHEET_ID = "12gdmHIP7c_3oE0EXxm21ax5Of4mljzo0RCxGAfmguvw";
     const GID = 0;
 
     function ajouter() {
@@ -132,47 +128,34 @@
     }
 
     async function telechargerRapport() {
-      // Vérifier si Google Sheet ID est renseigné
-      if(GOOGLE_SHEET_ID === "ID_DE_TA_FEUILLE_ICI"){
-        alert("⚠️ Mets l'ID de ta Google Sheet dans la variable GOOGLE_SHEET_ID dans le script !");
-        return;
-      }
-
-      // Construire l'URL CSV publique d'export
       const urlCSV = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${GID}`;
 
       try {
         const response = await fetch(urlCSV);
-        if(!response.ok) throw new Error("Erreur chargement Google Sheet");
+        if (!response.ok) throw new Error("Erreur chargement Google Sheet");
 
         const csvText = await response.text();
         const lignes = csvText.trim().split("\n").map(l => l.split(","));
 
-        // En-tête
         const header = lignes[0];
 
-        // Récupérer dates de filtre
         const { debut, fin } = getDatesFiltre();
         if (!debut || !fin) {
           alert("Dates invalides");
           return;
         }
 
-        // Filtrer lignes par date (colonne Date = index 0)
-        const lignesFiltrees = lignes.filter((ligne,i) => {
-          if(i === 0) return true; // garder l'entête
+        const lignesFiltrees = lignes.filter((ligne, i) => {
+          if (i === 0) return true;
           const dateCell = ligne[0];
           const dateObj = new Date(dateCell);
           return dateObj >= debut && dateObj <= fin;
         });
 
-        // Générer CSV filtré
         const csvFiltree = lignesFiltrees.map(l => l.join(",")).join("\n");
 
-        // Télécharger fichier
         downloadCSV(csvFiltree, `rapport_${formatDate(debut)}_à_${formatDate(fin)}.csv`);
-
-      } catch(err) {
+      } catch (err) {
         alert("Erreur : " + err.message);
       }
     }
@@ -182,33 +165,28 @@
       const now = new Date();
 
       let debut, fin;
+      fin = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-      fin = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23,59,59);
-
-      switch(periode) {
+      switch (periode) {
         case "semaine":
-          // Semaine dernière = 7 jours avant hier
           debut = new Date(fin);
           debut.setDate(debut.getDate() - 7);
           break;
-
         case "2semaines":
           debut = new Date(fin);
           debut.setDate(debut.getDate() - 14);
           break;
-
         case "mois":
           debut = new Date(fin);
           debut.setMonth(debut.getMonth() - 1);
           break;
-
         case "custom":
           const dDebut = document.getElementById("dateDebut").value;
           const dFin = document.getElementById("dateFin").value;
-          if(!dDebut || !dFin) return {};
+          if (!dDebut || !dFin) return {};
           debut = new Date(dDebut);
           fin = new Date(dFin);
-          fin.setHours(23,59,59);
+          fin.setHours(23, 59, 59);
           break;
       }
       return { debut, fin };
@@ -228,7 +206,7 @@
     }
 
     function formatDate(d) {
-      return d.toISOString().slice(0,10);
+      return d.toISOString().slice(0, 10);
     }
   </script>
 </body>
