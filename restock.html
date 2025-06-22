@@ -129,7 +129,7 @@
       <span id="ajouter-text">Ajouter</span>
       <span id="ajouter-loading" class="loading" style="display:none;"></span>
     </button>
-    <div id="success-message" class="success-message" style="display:none;" aria-live="polite"></div>
+    <div id="success-message" class="success-message" style="display:none;"></div>
   </div>
 
   <div class="container">
@@ -174,9 +174,9 @@
     });
 
     function showLoading(buttonId, show) {
+      const btn = document.getElementById(buttonId);
       const text = document.getElementById(`${buttonId.replace('-btn', '-text')}`);
       const loading = document.getElementById(`${buttonId.replace('-btn', '-loading')}`);
-      const btn = document.getElementById(buttonId);
       btn.disabled = show;
       text.style.display = show ? 'none' : 'inline';
       loading.style.display = show ? 'inline-block' : 'none';
@@ -198,27 +198,47 @@
       const camion = document.getElementById('camion').value.trim();
       const piece = document.getElementById('piece').value.trim();
       const description = document.getElementById('description').value.trim();
-      if (!camion) { showError('camion', 'Veuillez saisir un numéro de camion'); isValid = false; }
-      if (!piece) { showError('piece', 'Veuillez saisir un code pièce'); isValid = false; }
-      if (!description) { showError('description', 'Veuillez saisir une description'); isValid = false; }
+
+      if (!camion) {
+        showError('camion', 'Veuillez saisir un numéro de camion');
+        isValid = false;
+      }
+
+      if (!piece) {
+        showError('piece', 'Veuillez saisir un code pièce');
+        isValid = false;
+      }
+
+      if (!description) {
+        showError('description', 'Veuillez saisir une description');
+        isValid = false;
+      }
+
       return isValid;
     }
 
     async function ajouter() {
       if (!validateForm()) return;
+
       const camion = document.getElementById('camion').value.trim();
       const piece = document.getElementById('piece').value.trim();
       const description = document.getElementById('description').value.trim();
+
       showLoading('ajouter-btn', true);
+
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: "add-item", camion, piece, description })
         });
+
         const result = await response.json();
-        document.getElementById('success-message').textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
-        document.getElementById('success-message').style.display = 'block';
+        
+        const successMsg = document.getElementById('success-message');
+        successMsg.textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
+        successMsg.style.display = 'block';
+
         if (result.status === "success") {
           document.getElementById('camion').value = '';
           document.getElementById('piece').value = '';
@@ -239,22 +259,35 @@
 
     function toggleDatesPersonnalisees() {
       const select = document.getElementById('periode');
-      document.getElementById('dates-personnalisees').style.display = (select.value === 'custom') ? 'block' : 'none';
+      document.getElementById('dates-personnalisees').style.display = 
+        (select.value === 'custom') ? 'block' : 'none';
     }
 
     function validateDates() {
       clearErrors();
       let isValid = true;
       const periode = document.getElementById('periode').value;
+      
       if (periode === 'custom') {
         const dateDebut = document.getElementById('dateDebut').value;
         const dateFin = document.getElementById('dateFin').value;
-        if (!dateDebut) { showError('dateDebut', 'Veuillez sélectionner une date de début'); isValid = false; }
-        if (!dateFin) { showError('dateFin', 'Veuillez sélectionner une date de fin'); isValid = false; }
+
+        if (!dateDebut) {
+          showError('dateDebut', 'Veuillez sélectionner une date de début');
+          isValid = false;
+        }
+
+        if (!dateFin) {
+          showError('dateFin', 'Veuillez sélectionner une date de fin');
+          isValid = false;
+        }
+
         if (dateDebut && dateFin && new Date(dateDebut) > new Date(dateFin)) {
-          showError('dateFin', 'La date de fin doit être postérieure à la date de début'); isValid = false;
+          showError('dateFin', 'La date de fin doit être postérieure à la date de début');
+          isValid = false;
         }
       }
+
       return isValid;
     }
 
@@ -264,21 +297,18 @@
       let debut = new Date();
       let fin = new Date();
       fin.setHours(23, 59, 59);
+
       switch (periode) {
         case "semaine": debut.setDate(now.getDate() - 7); break;
         case "2semaines": debut.setDate(now.getDate() - 14); break;
         case "mois": debut.setMonth(now.getMonth() - 1); break;
         case "custom":
-          const dDebut = document.getElementById('dateDebut').value;
-          const dFin = document.getElementById('dateFin').value;
-          if (!dDebut || !dFin) return {};
-          debut = new Date(dDebut);
-          fin = new Date(dFin);
+          debut = new Date(document.getElementById('dateDebut').value);
+          fin = new Date(document.getElementById('dateFin').value);
           fin.setHours(23, 59, 59);
           break;
       }
-      debut.setMinutes(debut.getMinutes() - debut.getTimezoneOffset());
-      fin.setMinutes(fin.getMinutes() - fin.getTimezoneOffset());
+      
       return { debut, fin };
     }
 
@@ -302,21 +332,27 @@
 
     async function telechargerRapport() {
       if (!validateDates()) return;
+
       showLoading('rapport-btn', true);
+
       try {
         const { debut, fin } = getDatesFiltre();
         if (!debut || !fin) throw new Error("Dates invalides");
+
         const params = new URLSearchParams({
           action: "get-report",
           debut: formatDate(debut),
           fin: formatDate(fin)
         });
+
         const response = await fetch(`${SCRIPT_URL}?${params}`);
         const csvData = await response.text();
-        if (csvData.includes('Error') || csvData.includes('status')) {
+        
+        if (csvData.includes('Error')) {
           const errorData = JSON.parse(csvData);
           throw new Error(errorData.message || 'Erreur lors de la génération du rapport');
         }
+
         downloadCSV(csvData, `rapport_pieces_${formatDate(debut)}_${formatDate(fin)}.csv`);
       } catch (err) {
         console.error("Erreur:", err);
