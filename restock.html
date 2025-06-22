@@ -7,331 +7,132 @@
     <style>
         :root {
             --primary: #4a6bff;
-            --danger: #ff4757;
             --light-bg: #f8f9fa;
             --border: #e0e0e0;
-            --text: #333;
-            --text-light: #777;
         }
-        
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            line-height: 1.6;
-            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
             max-width: 900px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #fff;
         }
-        
-        h1, h2 {
-            color: var(--primary);
-            margin-top: 0;
-        }
-        
         .card {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding: 25px;
             margin-bottom: 25px;
-            border: 1px solid var(--border);
         }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: var(--text);
-        }
-        
-        input {
+        input, button {
             width: 100%;
-            padding: 12px 15px;
+            padding: 12px;
+            margin: 8px 0;
             border: 1px solid var(--border);
             border-radius: 6px;
-            font-size: 16px;
-            transition: border 0.3s;
         }
-        
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
-        }
-        
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 500;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
         }
-        
-        button:hover {
-            background: #3a5bef;
-            transform: translateY(-1px);
-        }
-        
-        button.danger {
-            background: var(--danger);
-        }
-        
-        button.danger:hover {
-            background: #e84141;
-        }
-        
-        .btn-group {
+        .suggestions {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin: 5px 0;
         }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 15px;
-        }
-        
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        th {
+        .suggestion-chip {
             background: var(--light-bg);
-            font-weight: 500;
-            color: var(--text);
-        }
-        
-        tr:hover {
-            background: rgba(74, 107, 255, 0.03);
-        }
-        
-        .status-message {
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin: 15px 0;
-            background: rgba(74, 107, 255, 0.1);
-            color: var(--primary);
-            display: inline-block;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-light);
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            
-            .card {
-                padding: 20px;
-            }
-            
-            th, td {
-                padding: 10px 12px;
-            }
+            padding: 5px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <h1>Gestion d'Inventaire</h1>
-    
     <div class="card">
         <h2>Ajouter une pièce</h2>
-        <div class="form-group">
-            <label for="camion">Camion</label>
-            <input id="camion" placeholder="Ex: CAM-001">
+        <div>
+            <label>Camion</label>
+            <input id="camion" list="camion-history">
+            <datalist id="camion-history"></datalist>
+            <div class="suggestions" id="suggestions"></div>
         </div>
-        <div class="form-group">
-            <label for="piece">Code pièce</label>
-            <input id="piece" placeholder="Ex: PCE-101">
-        </div>
-        <div class="form-group">
-            <label for="description">Description</label>
-            <input id="description" placeholder="Ex: Courroie de transmission">
-        </div>
-        <button onclick="ajouterPiece()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Enregistrer
-        </button>
-        <div id="message" class="status-message" style="display: none;"></div>
-    </div>
-    
-    <div class="card">
-        <h2>Inventaire</h2>
-        <div class="btn-group">
-            <button onclick="exporterCSV()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                </svg>
-                Exporter CSV
-            </button>
-            <button class="danger" onclick="resetData()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
-                Tout réinitialiser
-            </button>
-        </div>
-        
-        <table id="inventaireTable">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Camion</th>
-                    <th>Pièce</th>
-                    <th>Description</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-        
-        <div id="emptyState" class="empty-state">
-            Aucune pièce enregistrée pour le moment
-        </div>
+        <input id="piece" placeholder="Code pièce (ex: PCE-101)" required>
+        <input id="description" placeholder="Description">
+        <button onclick="ajouterPiece()">Enregistrer</button>
     </div>
 
     <script>
-        // Charger les données au démarrage
+        // Charger l'historique des camions au démarrage
         document.addEventListener('DOMContentLoaded', () => {
-            afficherInventaire();
+            chargerHistoriqueCamions();
+            const dernierCamion = localStorage.getItem('dernierCamion');
+            if (dernierCamion) {
+                document.getElementById('camion').value = dernierCamion;
+            }
         });
 
-        // Ajouter une nouvelle pièce
+        // Gestion des camions
+        function chargerHistoriqueCamions() {
+            const historique = JSON.parse(localStorage.getItem('historiqueCamions')) || [];
+            const datalist = document.getElementById('camion-history');
+            const suggestions = document.getElementById('suggestions');
+            
+            datalist.innerHTML = '';
+            suggestions.innerHTML = '';
+            
+            historique.forEach(camion => {
+                const option = document.createElement('option');
+                option.value = camion;
+                datalist.appendChild(option);
+                
+                const chip = document.createElement('div');
+                chip.className = 'suggestion-chip';
+                chip.textContent = camion;
+                chip.onclick = () => {
+                    document.getElementById('camion').value = camion;
+                };
+                suggestions.appendChild(chip);
+            });
+        }
+
         function ajouterPiece() {
             const camion = document.getElementById('camion').value.trim();
             const piece = document.getElementById('piece').value.trim();
             const description = document.getElementById('description').value.trim();
 
             if (!camion || !piece) {
-                showMessage("⚠️ Camion et Pièce sont obligatoires !", "error");
+                alert("Les champs Camion et Pièce sont obligatoires");
                 return;
             }
 
-            const entree = {
-                id: Date.now(),
+            // Sauvegarder le camion pour plus tard
+            const historiqueCamions = [...new Set([
+                camion, 
+                ...(JSON.parse(localStorage.getItem('historiqueCamions')) || [])
+            ]).slice(0, 5); // Garder seulement les 5 derniers
+            
+            localStorage.setItem('historiqueCamions', JSON.stringify(historiqueCamions));
+            localStorage.setItem('dernierCamion', camion);
+            
+            // Ajouter à l'inventaire (exemple)
+            const inventaire = JSON.parse(localStorage.getItem('inventaire')) || [];
+            inventaire.push({
                 camion,
                 piece,
                 description,
                 date: new Date().toISOString()
-            };
-
-            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
-            historique.push(entree);
-            localStorage.setItem('inventaire', JSON.stringify(historique));
-
-            showMessage("✅ Pièce ajoutée avec succès !", "success");
-            document.getElementById('camion').value = '';
+            });
+            localStorage.setItem('inventaire', JSON.stringify(inventaire));
+            
+            alert("Pièce enregistrée !");
             document.getElementById('piece').value = '';
             document.getElementById('description').value = '';
-
-            afficherInventaire();
-        }
-
-        // Afficher le message de statut
-        function showMessage(text, type) {
-            const msg = document.getElementById('message');
-            msg.textContent = text;
-            msg.style.display = 'block';
-            msg.style.background = type === "error" ? "rgba(255, 71, 87, 0.1)" : "rgba(74, 107, 255, 0.1)";
-            msg.style.color = type === "error" ? "var(--danger)" : "var(--primary)";
             
-            setTimeout(() => {
-                msg.style.display = 'none';
-            }, 3000);
-        }
-
-        // Afficher le tableau
-        function afficherInventaire() {
-            const tbody = document.querySelector('#inventaireTable tbody');
-            const emptyState = document.getElementById('emptyState');
-            tbody.innerHTML = '';
-
-            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
-
-            if (historique.length === 0) {
-                emptyState.style.display = 'block';
-                document.querySelector('table').style.display = 'none';
-            } else {
-                emptyState.style.display = 'none';
-                document.querySelector('table').style.display = 'table';
-                
-                historique.forEach(entry => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${formatDate(entry.date)}</td>
-                        <td>${entry.camion}</td>
-                        <td>${entry.piece}</td>
-                        <td>${entry.description || '-'}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
-
-        // Formater la date
-        function formatDate(dateString) {
-            const options = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit', 
-                minute: '2-digit' 
-            };
-            return new Date(dateString).toLocaleDateString('fr-FR', options);
-        }
-
-        // Exporter en CSV
-        function exporterCSV() {
-            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
-            
-            if (historique.length === 0) {
-                showMessage("⚠️ Aucune donnée à exporter", "error");
-                return;
-            }
-
-            let csv = "Date;Camion;Pièce;Description\n";
-            historique.forEach(entry => {
-                csv += `${formatDate(entry.date)};${entry.camion};${entry.piece};${entry.description || ''}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            
-            showMessage("📤 Export CSV généré", "success");
-        }
-
-        // Réinitialiser toutes les données
-        function resetData() {
-            if (confirm("⚠️ Voulez-vous vraiment supprimer TOUTES les données ? Cette action est irréversible.")) {
-                localStorage.removeItem('inventaire');
-                showMessage("🗑️ Inventaire réinitialisé avec succès", "success");
-                afficherInventaire();
-            }
+            // Mettre à jour les suggestions
+            chargerHistoriqueCamions();
         }
     </script>
 </body>
