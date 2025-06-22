@@ -1,60 +1,43 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Inventaire</title>
+    <title>Gestion Inventaire Simplifiée</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        input, button { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
+        input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
         button { background: #4285f4; color: white; border: none; cursor: pointer; }
-        button:hover { background: #3367d6; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Ajouter une pièce</h2>
-        <input id="camion" placeholder="Camion (ex: CAM-001)" required>
-        <input id="piece" placeholder="Pièce (ex: PCE-001)" required>
-        <input id="description" placeholder="Description" required>
-        <button onclick="ajouterPiece()">Ajouter</button>
-        <p id="message"></p>
-    </div>
+    <h2>Ajouter une pièce</h2>
+    <input id="camion" placeholder="Numéro de camion">
+    <input id="piece" placeholder="Code pièce">
+    <input id="description" placeholder="Description">
+    <button onclick="ajouterPiece()">Enregistrer</button>
+    <p id="message"></p>
 
-    <div class="container">
-        <h2>Télécharger rapport</h2>
-        <button onclick="genererRapport()">Télécharger CSV</button>
-    </div>
+    <h2>Télécharger le rapport</h2>
+    <button onclick="telechargerRapport()">Générer CSV</button>
 
     <script>
+        // URL de votre script déployé
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
 
-        // Solution CORS - Utilisation d'une fenêtre popup
-        function callGoogleScript(params) {
-            const url = `${SCRIPT_URL}?${new URLSearchParams(params)}`;
-            window.open(url, '_blank');
+        // Solution ultra-simple pour contourner CORS
+        function ajouterPiece() {
+            const camion = document.getElementById('camion').value;
+            const piece = document.getElementById('piece').value;
+            const description = document.getElementById('description').value;
+
+            // Ouverture dans un nouvel onglet pour éviter CORS
+            window.open(`${SCRIPT_URL}?action=add-item&camion=${encodeURIComponent(camion)}&piece=${encodeURIComponent(piece)}&description=${encodeURIComponent(description)}`, '_blank');
+            
+            document.getElementById('message').textContent = "Données envoyées !";
         }
 
-        async function ajouterPiece() {
-            const params = {
-                action: "add-item",
-                camion: document.getElementById('camion').value,
-                piece: document.getElementById('piece').value,
-                description: document.getElementById('description').value
-            };
-
-            callGoogleScript(params);
-            document.getElementById('message').textContent = "Envoi en cours...";
-        }
-
-        function genererRapport() {
-            const params = {
-                action: "get-report",
-                debut: "2023-01-01",  // À adapter
-                fin: new Date().toISOString().split('T')[0]
-            };
-            callGoogleScript(params);
+        function telechargerRapport() {
+            // Téléchargement direct via lien
+            window.open(`${SCRIPT_URL}?action=get-report`, '_blank');
         }
     </script>
 </body>
