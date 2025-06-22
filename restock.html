@@ -1,43 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <title>Gestion Inventaire Simplifiée</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Inventaire (LocalStorage)</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }
-        input, button { display: block; width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; }
         button { background: #4285f4; color: white; border: none; cursor: pointer; }
+        button.danger { background: #dc3545; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f2f2f2; }
     </style>
 </head>
 <body>
-    <h2>Ajouter une pièce</h2>
-    <input id="camion" placeholder="Numéro de camion">
-    <input id="piece" placeholder="Code pièce">
-    <input id="description" placeholder="Description">
-    <button onclick="ajouterPiece()">Enregistrer</button>
-    <p id="message"></p>
+    <div class="container">
+        <h2>➕ Ajouter une pièce</h2>
+        <input id="camion" placeholder="Camion (ex: CAM-001)">
+        <input id="piece" placeholder="Pièce (ex: PCE-101)">
+        <input id="description" placeholder="Description">
+        <button onclick="ajouterPiece()">Enregistrer</button>
+        <p id="message"></p>
+    </div>
 
-    <h2>Télécharger le rapport</h2>
-    <button onclick="telechargerRapport()">Générer CSV</button>
+    <div class="container">
+        <h2>📋 Liste des pièces</h2>
+        <button onclick="exporterCSV()">📤 Exporter en CSV</button>
+        <button class="danger" onclick="resetData()">♻️ Tout réinitialiser</button>
+        <table id="inventaireTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Camion</th>
+                    <th>Pièce</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <script>
-        // URL de votre script déployé
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
+        // Charger les données au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            afficherInventaire();
+        });
 
-        // Solution ultra-simple pour contourner CORS
+        // Ajouter une nouvelle pièce
         function ajouterPiece() {
-            const camion = document.getElementById('camion').value;
-            const piece = document.getElementById('piece').value;
-            const description = document.getElementById('description').value;
+            const camion = document.getElementById('camion').value.trim();
+            const piece = document.getElementById('piece').value.trim();
+            const description = document.getElementById('description').value.trim();
 
-            // Ouverture dans un nouvel onglet pour éviter CORS
-            window.open(`${SCRIPT_URL}?action=add-item&camion=${encodeURIComponent(camion)}&piece=${encodeURIComponent(piece)}&description=${encodeURIComponent(description)}`, '_blank');
-            
-            document.getElementById('message').textContent = "Données envoyées !";
+            if (!camion || !piece) {
+                alert("Camion et Pièce sont obligatoires !");
+                return;
+            }
+
+            const entree = {
+                id: Date.now(),
+                camion,
+                piece,
+                description,
+                date: new Date().toISOString()
+            };
+
+            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
+            historique.push(entree);
+            localStorage.setItem('inventaire', JSON.stringify(historique));
+
+            document.getElementById('message').textContent = "✅ Pièce ajoutée !";
+            document.getElementById('camion').value = '';
+            document.getElementById('piece').value = '';
+            document.getElementById('description').value = '';
+
+            afficherInventaire();
         }
 
-        function telechargerRapport() {
-            // Téléchargement direct via lien
-            window.open(`${SCRIPT_URL}?action=get-report`, '_blank');
+        // Afficher le tableau
+        function afficherInventaire() {
+            const tbody = document.querySelector('#inventaireTable tbody');
+            tbody.innerHTML = '';
+
+            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
+
+            historique.forEach(entry => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(entry.date).toLocaleDateString()}</td>
+                    <td>${entry.camion}</td>
+                    <td>${entry.piece}</td>
+                    <td>${entry.description || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Exporter en CSV
+        function exporterCSV() {
+            const historique = JSON.parse(localStorage.getItem('inventaire')) || [];
+            let csv = "Date;Camion;Pièce;Description\n";
+
+            historique.forEach(entry => {
+                csv += `${new Date(entry.date).toLocaleDateString()};${entry.camion};${entry.piece};${entry.description || ''}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Réinitialiser toutes les données
+        function resetData() {
+            if (confirm("⚠️ Voulez-vous vraiment TOUT supprimer ? Cette action est irréversible !")) {
+                localStorage.removeItem('inventaire');
+                document.getElementById('message').textContent = "🗑️ Inventaire vidé !";
+                afficherInventaire();
+            }
         }
     </script>
 </body>
