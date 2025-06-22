@@ -5,42 +5,201 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion Inventaire</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        input, button { width: 100%; padding: 10px; margin: 10px 0; }
+        :root {
+            --primary: #4a6bff;
+            --danger: #ff4757;
+            --light-bg: #f8f9fa;
+            --border: #e0e0e0;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border);
+        }
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #3a5bef;
+        }
+        button.danger {
+            background: var(--danger);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        th {
+            background: var(--light-bg);
+        }
+        .status-message {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            background: rgba(74, 107, 255, 0.1);
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
-    <h2>Ajouter une pièce</h2>
-    <input id="camion" placeholder="Camion (ex: CAM-001)">
-    <input id="piece" placeholder="Pièce (ex: PCE-101)">
-    <button onclick="ajouterPiece()">Enregistrer</button>
+    <h1>Gestion d'Inventaire</h1>
+
+    <div class="card">
+        <h2>➕ Ajouter une pièce</h2>
+        <input id="camion" placeholder="Camion (ex: CAM-001)">
+        <input id="piece" placeholder="Pièce (ex: PCE-101)" required>
+        <input id="description" placeholder="Description">
+        <button onclick="ajouterPiece()">Enregistrer</button>
+        <div id="message" class="status-message" style="display: none;"></div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Inventaire</h2>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="exporterCSV()">📤 Exporter CSV</button>
+            <button class="danger" onclick="resetData()">♻️ Tout réinitialiser</button>
+        </div>
+        <table id="inventaireTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Camion</th>
+                    <th>Pièce</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 
     <script>
-        // Définition de la fonction MANQUANTE
+        // Charger les données au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            // Récupérer le dernier camion utilisé
+            const dernierCamion = localStorage.getItem('dernierCamion');
+            if (dernierCamion) {
+                document.getElementById('camion').value = dernierCamion;
+            }
+            afficherInventaire();
+        });
+
+        // Ajouter une pièce
         function ajouterPiece() {
-            const camion = document.getElementById('camion').value;
-            const piece = document.getElementById('piece').value;
-            
+            const camion = document.getElementById('camion').value.trim();
+            const piece = document.getElementById('piece').value.trim();
+            const description = document.getElementById('description').value.trim();
+
             if (!camion || !piece) {
-                alert("Veuillez remplir tous les champs");
+                showMessage("⚠️ Camion et Pièce sont obligatoires", "error");
                 return;
             }
 
-            // Stockage dans localStorage
-            let inventaire = JSON.parse(localStorage.getItem('inventaire')) || [];
+            // Sauvegarder le camion pour plus tard
+            localStorage.setItem('dernierCamion', camion);
+
+            // Ajouter à l'inventaire
+            const inventaire = JSON.parse(localStorage.getItem('inventaire')) || [];
             inventaire.push({
                 camion,
                 piece,
+                description,
                 date: new Date().toISOString()
             });
             localStorage.setItem('inventaire', JSON.stringify(inventaire));
-            
-            alert("Pièce enregistrée !");
-            document.getElementById('piece').value = "";
+
+            showMessage("✅ Pièce ajoutée avec succès", "success");
+            document.getElementById('piece').value = '';
+            document.getElementById('description').value = '';
+            afficherInventaire();
         }
 
-        // Vérification de la syntaxe - Pas de ; superflus
-        const test = 123; // <-- Un seul ; ici
+        // Afficher l'inventaire
+        function afficherInventaire() {
+            const tbody = document.querySelector('#inventaireTable tbody');
+            tbody.innerHTML = '';
+
+            const inventaire = JSON.parse(localStorage.getItem('inventaire')) || [];
+            
+            inventaire.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${new Date(item.date).toLocaleString()}</td>
+                    <td>${item.camion}</td>
+                    <td>${item.piece}</td>
+                    <td>${item.description || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Exporter en CSV
+        function exporterCSV() {
+            const inventaire = JSON.parse(localStorage.getItem('inventaire')) || [];
+            if (inventaire.length === 0) {
+                showMessage("⚠️ Aucune donnée à exporter", "error");
+                return;
+            }
+
+            let csv = "Date,Camion,Pièce,Description\n";
+            inventaire.forEach(item => {
+                csv += `"${new Date(item.date).toLocaleString()}","${item.camion}","${item.piece}","${item.description || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventaire_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Réinitialiser
+        function resetData() {
+            if (confirm("⚠️ Voulez-vous vraiment TOUT supprimer ?")) {
+                localStorage.removeItem('inventaire');
+                localStorage.removeItem('dernierCamion');
+                showMessage("🗑️ Inventaire réinitialisé", "success");
+                afficherInventaire();
+            }
+        }
+
+        // Afficher un message
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.style.display = 'block';
+            msg.style.background = type === "error" ? "rgba(255, 71, 87, 0.1)" : "rgba(74, 107, 255, 0.1)";
+            msg.style.color = type === "error" ? "#ff4757" : "#4a6bff";
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
     </script>
 </body>
 </html>
