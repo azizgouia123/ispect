@@ -1,351 +1,61 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestion Inventaire Pièces</title>
-  <style>
-    :root {
-      --primary-color: #28a745;
-      --primary-hover: #218838;
-      --error-color: #dc3545;
-      --border-color: #ced4da;
-      --shadow: 0 0 12px rgba(0,0,0,0.1);
-    }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 1em;
-      max-width: 600px;
-      margin: auto;
-      line-height: 1.6;
-    }
-    .container {
-      background: white;
-      padding: 1.5em;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      margin-bottom: 1.5em;
-    }
-    h2 {
-      color: #333;
-      margin-top: 0;
-      padding-bottom: 0.5em;
-      border-bottom: 1px solid #eee;
-    }
-    .form-group {
-      margin-bottom: 1.2em;
-    }
-    label {
-      font-weight: 600;
-      margin-bottom: 0.4em;
-      display: block;
-      color: #495057;
-    }
-    input, select, button {
-      font-size: 1em;
-      padding: 0.7em;
-      width: 100%;
-      box-sizing: border-box;
-      border: 1px solid var(--border-color);
-      border-radius: 5px;
-      transition: border-color 0.3s;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
-    }
-    button {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background-color 0.3s;
-      margin-top: 0.5em;
-      padding: 0.8em;
-    }
-    button:hover {
-      background-color: var(--primary-hover);
-    }
-    button:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
-    }
-    #dates-personnalisees {
-      display: none;
-      background: #f8f9fa;
-      padding: 1em;
-      border-radius: 5px;
-      margin-top: 1em;
-    }
-    .loading {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-      margin-right: 10px;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    .error-message {
-      color: var(--error-color);
-      font-size: 0.9em;
-      margin-top: 0.3em;
-    }
-    .success-message {
-      color: var(--primary-color);
-      font-weight: bold;
-      margin-top: 1em;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Inventaire</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
+        button { background: #4285f4; color: white; border: none; cursor: pointer; }
+        button:hover { background: #3367d6; }
+    </style>
 </head>
 <body>
-
-  <div class="container">
-    <h2>Ajouter une pièce</h2>
-    <div class="form-group">
-      <label for="camion">Camion</label>
-      <input id="camion" placeholder="Ex: CAM-001" required>
-      <div id="camion-error" class="error-message"></div>
+    <div class="container">
+        <h2>Ajouter une pièce</h2>
+        <input id="camion" placeholder="Camion (ex: CAM-001)" required>
+        <input id="piece" placeholder="Pièce (ex: PCE-001)" required>
+        <input id="description" placeholder="Description" required>
+        <button onclick="ajouterPiece()">Ajouter</button>
+        <p id="message"></p>
     </div>
-    <div class="form-group">
-      <label for="piece">Code de la pièce</label>
-      <input id="piece" placeholder="Ex: PCE-2023-001" required>
-      <div id="piece-error" class="error-message"></div>
+
+    <div class="container">
+        <h2>Télécharger rapport</h2>
+        <button onclick="genererRapport()">Télécharger CSV</button>
     </div>
-    <div class="form-group">
-      <label for="description">Description</label>
-      <input id="description" placeholder="Ex: Courroie de transmission" required>
-      <div id="description-error" class="error-message"></div>
-    </div>
-    <button id="ajouter-btn" onclick="ajouter()">
-      <span id="ajouter-text">Ajouter</span>
-      <span id="ajouter-loading" class="loading" style="display:none;"></span>
-    </button>
-    <div id="success-message" class="success-message" style="display:none;"></div>
-  </div>
 
-  <div class="container">
-    <h2>Télécharger rapport</h2>
-    <div class="form-group">
-      <label for="periode">Période :</label>
-      <select id="periode" onchange="toggleDatesPersonnalisees()">
-        <option value="semaine">Semaine dernière</option>
-        <option value="2semaines">2 dernières semaines</option>
-        <option value="mois">1 mois</option>
-        <option value="custom">Personnalisé</option>
-      </select>
-    </div>
-    <div id="dates-personnalisees">
-      <div class="form-group">
-        <label for="dateDebut">Date début :</label>
-        <input type="date" id="dateDebut">
-        <div id="dateDebut-error" class="error-message"></div>
-      </div>
-      <div class="form-group">
-        <label for="dateFin">Date fin :</label>
-        <input type="date" id="dateFin">
-        <div id="dateFin-error" class="error-message"></div>
-      </div>
-    </div>
-    <button id="rapport-btn" onclick="telechargerRapport()">
-      <span id="rapport-text">Télécharger CSV</span>
-      <span id="rapport-loading" class="loading" style="display:none;"></span>
-    </button>
-  </div>
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
 
-  <script>
-    // VOTRE URL DE SCRIPT
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
-
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialisation des dates
-      const today = new Date();
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(today.getDate() - 7);
-      document.getElementById('dateDebut').valueAsDate = oneWeekAgo;
-      document.getElementById('dateFin').valueAsDate = today;
-      document.getElementById('camion').focus();
-    });
-
-    function showLoading(buttonId, show) {
-      const btn = document.getElementById(buttonId);
-      const text = document.getElementById(`${buttonId.replace('-btn', '-text')}`);
-      const loading = document.getElementById(`${buttonId.replace('-btn', '-loading')}`);
-      btn.disabled = show;
-      text.style.display = show ? 'none' : 'inline';
-      loading.style.display = show ? 'inline-block' : 'none';
-    }
-
-    function showError(fieldId, message) {
-      document.getElementById(`${fieldId}-error`).textContent = message;
-      document.getElementById(fieldId).classList.add('error');
-    }
-
-    function clearErrors() {
-      document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-      document.querySelectorAll('input').forEach(input => input.classList.remove('error'));
-    }
-
-    function validateForm() {
-      clearErrors();
-      let isValid = true;
-      const camion = document.getElementById('camion').value.trim();
-      const piece = document.getElementById('piece').value.trim();
-      const description = document.getElementById('description').value.trim();
-
-      if (!camion) {
-        showError('camion', 'Veuillez saisir un numéro de camion');
-        isValid = false;
-      }
-
-      if (!piece) {
-        showError('piece', 'Veuillez saisir un code pièce');
-        isValid = false;
-      }
-
-      if (!description) {
-        showError('description', 'Veuillez saisir une description');
-        isValid = false;
-      }
-
-      return isValid;
-    }
-
-    async function ajouter() {
-      if (!validateForm()) return;
-
-      const camion = document.getElementById('camion').value.trim();
-      const piece = document.getElementById('piece').value.trim();
-      const description = document.getElementById('description').value.trim();
-
-      showLoading('ajouter-btn', true);
-
-      try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: "add-item", 
-            camion, 
-            piece, 
-            description 
-          })
-        });
-
-        const result = await response.json();
-        
-        const successMsg = document.getElementById('success-message');
-        successMsg.textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
-        successMsg.style.display = 'block';
-
-        if (result.status === "success") {
-          document.getElementById('camion').value = '';
-          document.getElementById('piece').value = '';
-          document.getElementById('description').value = '';
-          document.getElementById('camion').focus();
-        }
-      } catch (err) {
-        document.getElementById('success-message').textContent = '❌ ' + err.message;
-        document.getElementById('success-message').style.display = 'block';
-        console.error("Erreur:", err);
-      } finally {
-        showLoading('ajouter-btn', false);
-        setTimeout(() => {
-          document.getElementById('success-message').style.display = 'none';
-        }, 3000);
-      }
-    }
-
-    function toggleDatesPersonnalisees() {
-      const select = document.getElementById('periode');
-      document.getElementById('dates-personnalisees').style.display = (select.value === 'custom') ? 'block' : 'none';
-    }
-
-    function validateDates() {
-      clearErrors();
-      let isValid = true;
-      const periode = document.getElementById('periode').value;
-      
-      if (periode === 'custom') {
-        const dateDebut = document.getElementById('dateDebut').value;
-        const dateFin = document.getElementById('dateFin').value;
-
-        if (!dateDebut) {
-          showError('dateDebut', 'Veuillez sélectionner une date de début');
-          isValid = false;
+        // Solution CORS - Utilisation d'une fenêtre popup
+        function callGoogleScript(params) {
+            const url = `${SCRIPT_URL}?${new URLSearchParams(params)}`;
+            window.open(url, '_blank');
         }
 
-        if (!dateFin) {
-          showError('dateFin', 'Veuillez sélectionner une date de fin');
-          isValid = false;
+        async function ajouterPiece() {
+            const params = {
+                action: "add-item",
+                camion: document.getElementById('camion').value,
+                piece: document.getElementById('piece').value,
+                description: document.getElementById('description').value
+            };
+
+            callGoogleScript(params);
+            document.getElementById('message').textContent = "Envoi en cours...";
         }
 
-        if (dateDebut && dateFin && new Date(dateDebut) > new Date(dateFin)) {
-          showError('dateFin', 'La date de fin doit être postérieure à la date de début');
-          isValid = false;
+        function genererRapport() {
+            const params = {
+                action: "get-report",
+                debut: "2023-01-01",  // À adapter
+                fin: new Date().toISOString().split('T')[0]
+            };
+            callGoogleScript(params);
         }
-      }
-
-      return isValid;
-    }
-
-    function getDatesFiltre() {
-      const periode = document.getElementById('periode').value;
-      const now = new Date();
-      let debut = new Date();
-      let fin = new Date();
-      fin.setHours(23, 59, 59);
-
-      switch (periode) {
-        case "semaine": debut.setDate(now.getDate() - 7); break;
-        case "2semaines": debut.setDate(now.getDate() - 14); break;
-        case "mois": debut.setMonth(now.getMonth() - 1); break;
-        case "custom":
-          debut = new Date(document.getElementById('dateDebut').value);
-          fin = new Date(document.getElementById('dateFin').value);
-          fin.setHours(23, 59, 59);
-          break;
-      }
-      
-      return { debut, fin };
-    }
-
-    function formatDate(d) {
-      return d.toISOString().split('T')[0];
-    }
-
-    function telechargerRapport() {
-      if (!validateDates()) return;
-
-      showLoading('rapport-btn', true);
-
-      try {
-        const { debut, fin } = getDatesFiltre();
-        if (!debut || !fin) throw new Error("Dates invalides");
-
-        const params = new URLSearchParams({
-          action: "get-report",
-          debut: formatDate(debut),
-          fin: formatDate(fin)
-        });
-
-        // Solution pour contourner CORS - ouverture dans un nouvel onglet
-        window.open(`${SCRIPT_URL}?${params.toString()}`, '_blank');
-      } catch (err) {
-        console.error("Erreur:", err);
-        alert("Erreur lors du téléchargement : " + err.message);
-      } finally {
-        showLoading('rapport-btn', false);
-      }
-    }
-  </script>
+    </script>
 </body>
 </html>
