@@ -162,9 +162,11 @@
   </div>
 
   <script>
+    // VOTRE URL DE SCRIPT
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSrlEsweXaONxhoQi6IXTwBlHBDvOQsatt2pCJ-gcHS8jFW-I0JWxsjQVoYGhWe38BKw/exec";
 
     document.addEventListener('DOMContentLoaded', function() {
+      // Initialisation des dates
       const today = new Date();
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(today.getDate() - 7);
@@ -230,13 +232,19 @@
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: "add-item", camion, piece, description })
+          body: JSON.stringify({ 
+            action: "add-item", 
+            camion, 
+            piece, 
+            description 
+          })
         });
 
         const result = await response.json();
         
-        document.getElementById('success-message').textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
-        document.getElementById('success-message').style.display = 'block';
+        const successMsg = document.getElementById('success-message');
+        successMsg.textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
+        successMsg.style.display = 'block';
 
         if (result.status === "success") {
           document.getElementById('camion').value = '';
@@ -314,21 +322,7 @@
       return d.toISOString().split('T')[0];
     }
 
-    function downloadCSV(text, filename) {
-      const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    }
-
-    async function telechargerRapport() {
+    function telechargerRapport() {
       if (!validateDates()) return;
 
       showLoading('rapport-btn', true);
@@ -343,15 +337,8 @@
           fin: formatDate(fin)
         });
 
-        const response = await fetch(`${SCRIPT_URL}?${params}`);
-        const csvData = await response.text();
-        
-        if (csvData.includes('Error') || csvData.includes('status')) {
-          const errorData = JSON.parse(csvData);
-          throw new Error(errorData.message || 'Erreur lors de la génération du rapport');
-        }
-
-        downloadCSV(csvData, `rapport_pieces_${formatDate(debut)}_${formatDate(fin)}.csv`);
+        // Solution pour contourner CORS - ouverture dans un nouvel onglet
+        window.open(`${SCRIPT_URL}?${params.toString()}`, '_blank');
       } catch (err) {
         console.error("Erreur:", err);
         alert("Erreur lors du téléchargement : " + err.message);
