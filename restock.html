@@ -235,9 +235,8 @@
 
         const result = await response.json();
         
-        const successMsg = document.getElementById('success-message');
-        successMsg.textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
-        successMsg.style.display = 'block';
+        document.getElementById('success-message').textContent = result.status === "success" ? '✅ ' + result.message : '❌ ' + result.message;
+        document.getElementById('success-message').style.display = 'block';
 
         if (result.status === "success") {
           document.getElementById('camion').value = '';
@@ -259,8 +258,7 @@
 
     function toggleDatesPersonnalisees() {
       const select = document.getElementById('periode');
-      document.getElementById('dates-personnalisees').style.display = 
-        (select.value === 'custom') ? 'block' : 'none';
+      document.getElementById('dates-personnalisees').style.display = (select.value === 'custom') ? 'block' : 'none';
     }
 
     function validateDates() {
@@ -348,7 +346,7 @@
         const response = await fetch(`${SCRIPT_URL}?${params}`);
         const csvData = await response.text();
         
-        if (csvData.includes('Error')) {
+        if (csvData.includes('Error') || csvData.includes('status')) {
           const errorData = JSON.parse(csvData);
           throw new Error(errorData.message || 'Erreur lors de la génération du rapport');
         }
