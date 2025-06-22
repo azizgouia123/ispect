@@ -76,6 +76,7 @@
         <h2>➕ Ajouter une pièce</h2>
         <input id="camion" placeholder="Camion (ex: CAM-001)">
         <input id="piece" placeholder="Pièce (ex: PCE-101)" required>
+        <input id="quantite" type="number" placeholder="Quantité" value="1" min="1">
         <input id="description" placeholder="Description">
         <button onclick="ajouterPiece()">Enregistrer</button>
         <div id="message" class="status-message" style="display: none;"></div>
@@ -93,6 +94,7 @@
                     <th>Date</th>
                     <th>Camion</th>
                     <th>Pièce</th>
+                    <th>Quantité</th>
                     <th>Description</th>
                 </tr>
             </thead>
@@ -115,6 +117,7 @@
         function ajouterPiece() {
             const camion = document.getElementById('camion').value.trim();
             const piece = document.getElementById('piece').value.trim();
+            const quantite = parseInt(document.getElementById('quantite').value) || 1;
             const description = document.getElementById('description').value.trim();
 
             if (!camion || !piece) {
@@ -130,6 +133,7 @@
             inventaire.push({
                 camion,
                 piece,
+                quantite,
                 description,
                 date: new Date().toISOString()
             });
@@ -137,6 +141,7 @@
 
             showMessage("✅ Pièce ajoutée avec succès", "success");
             document.getElementById('piece').value = '';
+            document.getElementById('quantite').value = '1';
             document.getElementById('description').value = '';
             afficherInventaire();
         }
@@ -154,6 +159,7 @@
                     <td>${new Date(item.date).toLocaleString()}</td>
                     <td>${item.camion}</td>
                     <td>${item.piece}</td>
+                    <td>${item.quantite || 1}</td>
                     <td>${item.description || '-'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -168,9 +174,9 @@
                 return;
             }
 
-            let csv = "Date,Camion,Pièce,Description\n";
+            let csv = "Date,Camion,Pièce,Quantité,Description\n";
             inventaire.forEach(item => {
-                csv += `"${new Date(item.date).toLocaleString()}","${item.camion}","${item.piece}","${item.description || ''}"\n`;
+                csv += `"${new Date(item.date).toLocaleString()}","${item.camion}","${item.piece}","${item.quantite || 1}","${item.description || ''}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
